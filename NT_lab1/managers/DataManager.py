@@ -1,8 +1,8 @@
-from urllib import response
 from random import randint
 from fake_useragent import UserAgent
 from bs4 import BeautifulSoup
 from fp.fp import FreeProxy
+import FileManager as fm
 
 import matplotlib.pyplot as plt
 import shutil
@@ -22,57 +22,7 @@ class bcolors:
     ENDC = '\033[0m'
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
-class FileManager:
-    
-    def __getSystemsPath(name):
-         path = FileManager.__createDSFolder(name)
-         return FileManager.__createFolder(path + f'\\__systems')
 
-    def getUsedUrlPath(name):
-        return FileManager.__getSystemsPath(name) + f'\\url.txt'
-
-    def getPagePath(name):
-        return FileManager.__getSystemsPath(name) + f'\\page.txt'
-
-    def getSourcesPath(name):
-        path = FileManager.__createDSFolder(name)
-        return FileManager.__createFolder(path + f'\\sources')
-    
-    def getSmallPath(name):
-        path = FileManager.__createDSFolder(name)
-        return FileManager.__createFolder(path + f'\\small_sources')
-
-    def getLastPage(name):
-        path = FileManager.getPagePath(name)
-        pageCount = 0
-        if os.path.exists(path):
-            with open(path, 'r') as file:
-                pageCount = int(file.read()) + 1
-        return pageCount
-
-    def getUsedUrl(name):
-         path = FileManager.getUsedUrlPath(name)
-         usedURL = []
-         if os.path.exists(path):
-            with open(path, 'r') as file:
-                usedURL = file.read().split('\n')
-         return usedURL
-
-    def saveLastPage(name, page):
-        path = FileManager.getPagePath(name)
-        with open(path, 'w') as file:
-            file.write(str(page))
-
-    def __createDSFolder(name):
-        path = f'datasets\\{name}'
-        if not os.path.isdir(path):
-            os.makedirs(path)
-        return path
-    
-    def __createFolder(path):
-        if not os.path.isdir(path):
-            os.makedirs(path)
-        return path
 
 class DataManager(object):
     frp = FreeProxy(rand=True)
@@ -81,12 +31,12 @@ class DataManager(object):
     
     def downloadFound(name, needCount):
         urls = []
-        usedURL = FileManager.getUsedUrl(name)
-        page = FileManager.getLastPage(name)
+        usedURL = fm.getUsedUrl(name)
+        page = fm.getLastPage(name)
         number_file = len(usedURL)
         query = str.replace(name,' ','%20')
         
-        path = FileManager.getSourcesPath(name)
+        path = fm.getSourcesPath(name)
         jpg_files = os.listdir(path)
         imagesCount = len(jpg_files)
 
@@ -96,7 +46,7 @@ class DataManager(object):
             actualUrl = list(set(urls) - set(usedURL))
             print(f'Find {len(actualUrl)} urls')
             
-            with open(FileManager.getUsedUrlPath(name), 'a') as file:
+            with open(fm.getUsedUrlPath(name), 'a') as file:
                 for url in actualUrl:
                     nameFile = 'download_' + str(number_file) + '.jpg'
                     isLoaded = DataManager.__download(name, url, nameFile, True)
@@ -107,7 +57,7 @@ class DataManager(object):
                         imagesCount+=1
             print(f'{bcolors.OKCYAN} {imagesCount} images out of {needCount} {bcolors.ENDC} ')
             page+=1
-            FileManager.saveLastPage(name,page)
+            fm.saveLastPage(name,page)
 
     def __printInfoConnect(url, proxy, headers):
         if(len(proxy) == 0):
@@ -195,7 +145,7 @@ class DataManager(object):
 
     def __download(name, url, nameFile, newLoad):
         HEADERS = DataManager.__getHeaders()
-        path = FileManager.getSourcesPath(name);
+        path = fm.getSourcesPath(name);
         try:
             with requests.get(url, headers=HEADERS, stream=True, timeout=(5,15)) as r:
                 with open(path +'\\'+nameFile, 'wb') as f:
@@ -222,7 +172,7 @@ class DataManager(object):
   
 
     def reinitIndexs(name):
-        path = FileManager.getSourcesPath(name)
+        path = fm.getSourcesPath(name)
         jpg_files = os.listdir(path)
         digit_len = len(str(len(jpg_files)))
         
@@ -242,7 +192,7 @@ class DataManager(object):
 
 
     def removeUnunique(name):
-        path = FileManager.getSourcesPath(name)
+        path = fm.getSourcesPath(name)
         if not os.path.isdir(path):
             return 0
         count = 0
@@ -261,9 +211,8 @@ class DataManager(object):
         print(f'Deleted {count} ununique files')
         return len(file_names);
 
-
     def removeUnvalide(name):
-        path = FileManager.getSourcesPath(name)
+        path = fm.getSourcesPath(name)
         if not os.path.isdir(path):
             return
         count = 0
@@ -280,8 +229,8 @@ class DataManager(object):
         height = 128
         width = 128
         size = (width, height)
-        path = FileManager.getSourcesPath(name)
-        smallP = FileManager.getSmallPath(name)
+        path = fm.getSourcesPath(name)
+        smallP = fm.getSmallPath(name)
 
         files_small = os.listdir(smallP)
         for sname in files_small:

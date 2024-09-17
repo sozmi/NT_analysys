@@ -1,5 +1,5 @@
 
-from DataManager import DataManager
+from managers.DataManager import DataManager
 
 def main():
     queries = ["polar bear","brown bear"]
@@ -9,8 +9,7 @@ def main():
             if(DataManager.clearData(query)>=needCount):
                 break
             DataManager.downloadFound(query,needCount);
-        
-       
+              
 
 if __name__ == '__main__':
     main()

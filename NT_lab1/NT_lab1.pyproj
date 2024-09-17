@@ -24,13 +24,14 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="main.py" />
-    <Compile Include="DataManager.py" />
+    <Compile Include="managers\DataManager.py" />
+    <Compile Include="managers\FileManager.py" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="requirements.txt" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="data_manager\" />
+    <Folder Include="managers\" />
   </ItemGroup>
   <ItemGroup>
     <Interpreter Include="..\..\..\..\..\..\..\..\Programms\Python OKR\NT_1\nt_1\">
