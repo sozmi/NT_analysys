@@ -4,7 +4,6 @@ from bs4 import BeautifulSoup
 from fp.fp import FreeProxy
 import FileManager as fm
 
-import matplotlib.pyplot as plt
 import shutil
 import requests
 import os
@@ -25,11 +24,21 @@ class bcolors:
 
 
 class DataManager(object):
+    '''
+    Класс отвечает за получение и загрузку данных
+    '''
     frp = FreeProxy(rand=True)
     lastProxies = {}
     blackProxy =[]
     
+
     def downloadFound(name, needCount):
+        '''
+        Ищем изображения по запросу
+        @name - запрос
+        @needCount - необходимое количество изображений
+        '''
+
         urls = []
         usedURL = fm.getUsedUrl(name)
         page = fm.getLastPage(name)
@@ -60,7 +69,13 @@ class DataManager(object):
             fm.saveLastPage(name,page)
 
     def __printInfoConnect(url, proxy, headers):
-        if(len(proxy) == 0):
+        '''
+        Выводим информацию о текущем подключении
+        @url - ссылка по которой подключаемся
+        @proxy - ip proxy
+        @headers - заголовки строки подключения
+        '''
+        if not proxy:
             proxy = 'no'
 
         print()
@@ -70,12 +85,18 @@ class DataManager(object):
 
 
     def __getHtml(page, query, needProxy):
+        '''
+        Получение кода html страницы
+        @page - номер страницы
+        @query - запрос
+        @needProxy - нужно ли использовать прокси при подключении
+        '''
         URL = f'https://yandex.ru/images/touch/search?from=tabbar&p={page}&text={query}&itype=jpg'
         HEADERS = DataManager.__getHeaders()
         proxies = DataManager.lastProxies
         proxy = ''
         if(needProxy):
-            while len(proxies)==0:
+            while not proxies:
                 try:
                     proxy = DataManager.frp.get()
                     if(proxy in DataManager.blackProxy):
@@ -107,6 +128,11 @@ class DataManager(object):
 
 
     def __parsePage(page,query):
+        '''
+        Разбор кода html страницы
+        @page - номер страницы
+        @query - запрос
+        '''
         content = DataManager.__getHtml(page, query, False)
         #получаем содержимое страницы
         rootDiv = None
@@ -134,6 +160,9 @@ class DataManager(object):
 
 
     def __getHeaders():
+         '''
+         Получение случайного заголовка страницы
+         '''
          ua = UserAgent(os='windows',min_percentage=40)
          headers = {'User-Agent': ua.random,
                    'Accept-Encoding': 'gzip, deflate, br, zstd',
@@ -144,6 +173,13 @@ class DataManager(object):
 
 
     def __download(name, url, nameFile, newLoad):
+        '''
+        Скачивание изображения по ссылке
+        @name - запрос
+        @url - ссылка на изображение
+        @nameFile - название файла
+        @newLoad - индикатор первый ли вызов функции
+        '''
         HEADERS = DataManager.__getHeaders()
         path = fm.getSourcesPath(name);
         try:
@@ -160,18 +196,26 @@ class DataManager(object):
             # Узнаем имя возникшего исключения
             print(e.__class__.__name__ + f': {url}')
             DataManager.__await(randint(1,5))
-            if(newLoad == True):
+            if newLoad:
                return DataManager.__download(name, url, nameFile, False)
         return False
 
 
     def __await(sec):
+        '''
+        Ожидание с выводом в консоль
+        @sec - количество секунд
+        '''
         for i in range(sec, 0, -1):
             print(f'Sleep: {i:03} s', end = '\r')
             time.sleep(1)
   
 
     def reinitIndexs(name):
+        '''
+        Изменение номеров файлов по порядку 0000, 0001 ...
+        @name - запрос
+        '''
         path = fm.getSourcesPath(name)
         jpg_files = os.listdir(path)
         digit_len = len(str(len(jpg_files)))
@@ -192,12 +236,16 @@ class DataManager(object):
 
 
     def removeUnunique(name):
-        path = fm.getSourcesPath(name)
+        '''
+        Удаление неуникальных файлов
+        @name - запрос
+        '''
+        path = fm.getSmallPath(name)
         if not os.path.isdir(path):
             return 0
         count = 0
         file_names = os.listdir(path)
-        return len(file_names)
+
         for nameA in file_names:
             image_1 = cv2.imread(f'{path}\\{nameA}')
 
@@ -212,6 +260,10 @@ class DataManager(object):
         return len(file_names);
 
     def removeUnvalide(name):
+        '''
+        Удаление недоступных файлов
+        @name - запрос
+        '''
         path = fm.getSourcesPath(name)
         if not os.path.isdir(path):
             return
@@ -226,6 +278,10 @@ class DataManager(object):
      
     
     def resizeImages(name):
+        '''
+        Изменение размера изображения
+        @name - запрос
+        '''
         height = 128
         width = 128
         size = (width, height)
@@ -244,6 +300,10 @@ class DataManager(object):
 
 
     def clearData(name):
+        '''
+        Очистка данных
+        @name - запрос
+        '''
         print(f'Start cleaning data {name}...')
         print('Remove unvalide files...')
         DataManager.removeUnvalide(name)
