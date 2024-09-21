@@ -25,19 +25,7 @@ class FileManager:
         получает путь к файлу, хранящему значение последней загруженной страницы
         @name - наименование(запрос) датасета
         '''
-        return FileManager.__getSystemsPath(name) + f'\\page.csv'
-
-    def getAnnotationPath(name):
-        '''
-        получает путь к файлу, хранящему аннотацию исходных файлов
-        '''
-        return FileManager.__getSystemsPath(name) + f'\\ann.csv'
-
-    def getAnnotationPath(name):
-        '''
-        получает путь к файлу, хранящему аннотацию сжатых файлов
-        '''
-        return FileManager.__getSystemsPath(name) + f'\\small_ann.txt'
+        return FileManager.__getSystemsPath(name) + f'\\page.txt'
 
     def getSourcesPath(name):
         '''
