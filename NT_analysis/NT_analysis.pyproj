@@ -3,14 +3,15 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>eb923655-c407-499e-9787-8e26dfbd5996</ProjectGuid>
-    <ProjectHome>.</ProjectHome>
+    <ProjectHome>
+    </ProjectHome>
     <StartupFile>main.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
-    <Name>NT_lab1</Name>
-    <RootNamespace>NT_lab1</RootNamespace>
+    <Name>NT_analysis</Name>
+    <RootNamespace>NT_analysis</RootNamespace>
     <IsWindowsApplication>False</IsWindowsApplication>
     <InterpreterId>MSBuild|nt_1|$(MSBuildProjectFullPath)</InterpreterId>
   </PropertyGroup>
