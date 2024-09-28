@@ -1,14 +1,15 @@
 
 from managers.DataManager import DataManager as dm
+import shutil
+import requests
 
 def main():
     queries = ["polar bear","brown bear"]
     needCount = 1000
+                   
     for query in queries:
-        while True:
-            if(dm.clearData(query)>=needCount):
-                break
-            dm.downloadFound(query,needCount);
+        dm.downloadImages(query, needCount);
+        dm.reinitIndexs(query)
               
 
 if __name__ == '__main__':
