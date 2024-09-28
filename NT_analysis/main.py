@@ -1,7 +1,4 @@
-
 from managers.DataManager import DataManager as dm
-import shutil
-import requests
 
 def main():
     queries = ["polar bear","brown bear"]
