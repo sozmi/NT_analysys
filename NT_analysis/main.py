@@ -1,14 +1,14 @@
 
-from managers.DataManager import DataManager
+from managers.DataManager import DataManager as dm
 
 def main():
     queries = ["polar bear","brown bear"]
     needCount = 1000
     for query in queries:
         while True:
-            if(DataManager.clearData(query)>=needCount):
+            if(dm.clearData(query)>=needCount):
                 break
-            DataManager.downloadFound(query,needCount);
+            dm.downloadFound(query,needCount);
               
 
 if __name__ == '__main__':
