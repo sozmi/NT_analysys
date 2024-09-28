@@ -361,9 +361,5 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
-/NT_lab1/datasets
-/NT_lab1/ya.html
-/NT_analysis/datasets
-/NT_analysis/annotations/beer.csv
 /NT_analysis/env
-/NT_analysis/data/datasets/polar bear
+/NT_analysis/data
