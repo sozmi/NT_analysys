@@ -2,51 +2,75 @@
 
 class FileManager:
     '''
-    Класс, отвечает за сохранение структуры и информации в датасете
+    Класс, отвечает за сохранение структуры и информации в программе
     '''
 
     def __getSystemsPath(name):
         '''
-        получает путь к системным данным
+        Получает путь к системным данным
         @name - наименование(запрос) датасета
+        @return - путь к системным данным
         '''
         path = FileManager.__createDSFolder(name)
         return FileManager.__createFolder(path + f'\\__systems')
+    
+    def __createDSFolder(name):
+        '''
+        Создает папку "\dataset\name"
+        @name - наименование(запрос) датасета
+        @return - путь к папке датасета
+        '''
+        path = f'{FileManager.__createDataFolder()}\\datasets\\{name}'
+        return FileManager.__createFolder(path)
+
+    def __createDataFolder():
+        '''
+        Создает папку с информацией, необходимой для работы приложения
+        @return - путь к папке с данными
+        '''
+        path = f'data'
+        return FileManager.__createFolder(path)
+
+    def __createFolder(path):
+        '''
+        Создает папки по адресу
+        @path - путь к папке
+        @return - путь к папке
+        '''
+        if not os.path.isdir(path):
+            os.makedirs(path)
+        return path
 
     def getUsedUrlPath(name):
         '''
-        получает путь к файлу, хранящему списку ссылок, которые были обработаны в рамках запроса
+        Получает путь к файлу, хранящему списку ссылок, которые были обработаны в рамках запроса
         @name - наименование(запрос) датасета
+        @return - путь к файлу с url
         '''
         return FileManager.__getSystemsPath(name) + f'\\url.txt'
 
     def getPagePath(name):
         '''
-        получает путь к файлу, хранящему значение последней загруженной страницы
+        Получает путь к файлу, хранящему значение последней загруженной страницы
         @name - наименование(запрос) датасета
+        @return - путь к файлу с информацией о странице
         '''
         return FileManager.__getSystemsPath(name) + f'\\page.txt'
 
     def getSourcesPath(name):
         '''
-        получает путь к папке с исходниками изображений
+        Получает путь к папке с исходниками изображений
         @name - наименование(запрос) датасета
+        @return - путь к файлу с ресурсами
         '''
         path = FileManager.__createDSFolder(name)
         return FileManager.__createFolder(path + f'\\sources')
-    
-    def getSmallPath(name):
-        '''
-        получает путь к папке с сжатыми изображениями
-        @name - наименование(запрос) датасета
-        '''
-        path = FileManager.__createDSFolder(name)
-        return FileManager.__createFolder(path + f'\\small_sources')
 
     def getLastPage(name):
         '''
-        получает последнюю скачанную страницу для запроса
+        Получает последнюю скачанную страницу для запроса
         @name - наименование(запрос) датасета
+        @return - номер последней страницы
         '''
         path = FileManager.getPagePath(name)
         pageCount = 0
@@ -57,8 +81,9 @@ class FileManager:
 
     def getUsedUrl(name):
         '''
-        получает список обработанных ссылок на изображения
+        Получает список обработанных ссылок на изображения
         @name - наименование(запрос) датасета
+        @return - номер
         '''
         path = FileManager.getUsedUrlPath(name)
         usedURL = []
@@ -76,19 +101,4 @@ class FileManager:
         with open(path, 'w') as file:
             file.write(str(page))
 
-    def __createDSFolder(name):
-        '''
-        создает папку dataset/name
-        @name - наименование(запрос) датасета
-        '''
-        path = f'datasets\\{name}'
-        return FileManager.__createFolder(path)
-    
-    def __createFolder(path):
-        '''
-        создает папки по адресу
-        @path - путь к папке
-        '''
-        if not os.path.isdir(path):
-            os.makedirs(path)
-        return path
+
