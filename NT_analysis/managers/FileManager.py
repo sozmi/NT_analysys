@@ -86,11 +86,11 @@ class FileManager:
         @return - номер
         '''
         path = FileManager.getUsedUrlPath(name)
-        usedURL = []
+        urls = []
         if os.path.exists(path):
             with open(path, 'r') as file:
-                usedURL = file.read().split('\n')
-        return usedURL
+                urls = file.read().split('\n')
+        return urls
 
     def saveLastPage(name, page):
         '''

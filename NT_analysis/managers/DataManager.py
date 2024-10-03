@@ -35,25 +35,23 @@ class DataManager(object):
     blackProxy =[]
     
 
-    def downloadImages(name, needCount):
+    def downloadImages(name, need_сount):
         '''
         Ищем изображения по запросу
         @name - запрос
-        @needCount - необходимое количество изображений
+        @need_count - необходимое количество изображений
+        @need_small - нужно ли загружать миниатюры
         '''
-
-        urls = []
         usedURL = fm.getUsedUrl(name)
         page = fm.getLastPage(name)
-        number_file = len(usedURL)
         query = str.replace(name,' ','%20')
-        
         path = fm.getSourcesPath(name)
         jpg_files = os.listdir(path)
         imagesCount = len(jpg_files)
+        number_file = imagesCount
 
         #ищем ссылки на оригинальные изображения
-        while imagesCount < needCount: 
+        while imagesCount < need_сount: 
             urls = DataManager.__parsePage(page, query)
             actualUrl = list(set(urls) - set(usedURL))
             print(f'Найдено {len(actualUrl)} urls')
@@ -67,7 +65,7 @@ class DataManager(object):
                     if isLoaded == True:
                         number_file+=1
                         imagesCount+=1
-            print(f'{bcolors.OKCYAN} Загружено {imagesCount} изображений из {needCount} {bcolors.ENDC} ')
+            print(f'{bcolors.OKCYAN} Загружено {imagesCount} изображений из {need_сount} {bcolors.ENDC} ')
             page+=1
             fm.saveLastPage(name,page)
 
@@ -120,7 +118,7 @@ class DataManager(object):
         DataManager.__printInfoConnect(URL, proxies, HEADERS)
 
         try:
-            response = requests.get(URL, headers=HEADERS, timeout=(3.05, 27), proxies=proxies, verify=False)
+            response = requests.get(URL, headers=HEADERS, timeout=(3.05, 5), proxies=proxies, verify=False)
         except Exception as e:
             # Узнаем имя возникшего исключения
             print(e.__class__.__name__ + f': {URL}') 
@@ -195,7 +193,6 @@ class DataManager(object):
                     #shutil.copyfileobj(r.raw, f)
                     print(f'Скачан файл [{nameFile}]: {url}') 
         except requests.exceptions.SSLError as e:
-            os.remove(imagePath)
             # Узнаем имя возникшего исключения
             print(f'{bcolors.FAIL}{e.__class__.__name__}: {url}{bcolors.ENDC}')
             return False
