@@ -13,7 +13,7 @@
     <Name>NT_analysis</Name>
     <RootNamespace>NT_analysis</RootNamespace>
     <IsWindowsApplication>False</IsWindowsApplication>
-    <InterpreterId>MSBuild|nt_1|$(MSBuildProjectFullPath)</InterpreterId>
+    <InterpreterId>MSBuild|env|$(MSBuildProjectFullPath)</InterpreterId>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -27,6 +27,7 @@
     <Compile Include="main.py" />
     <Compile Include="managers\DataManager.py" />
     <Compile Include="managers\FileManager.py" />
+    <Compile Include="managers\RequestManager.py" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="requirements.txt" />
@@ -35,10 +36,10 @@
     <Folder Include="managers\" />
   </ItemGroup>
   <ItemGroup>
-    <Interpreter Include="..\..\..\..\..\..\..\..\Programms\Python OKR\NT_1\nt_1\">
-      <Id>nt_1</Id>
+    <Interpreter Include="env\">
+      <Id>env</Id>
       <Version>3.9</Version>
-      <Description>nt_1 (Python 3.9 (64-bit))</Description>
+      <Description>env (Python 3.9 (64-bit))</Description>
       <InterpreterPath>Scripts\python.exe</InterpreterPath>
       <WindowsInterpreterPath>Scripts\pythonw.exe</WindowsInterpreterPath>
       <PathEnvironmentVariable>PYTHONPATH</PathEnvironmentVariable>

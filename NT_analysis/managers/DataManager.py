@@ -1,4 +1,7 @@
-﻿from random import randint
+﻿from email.mime import image
+from random import randint
+from tkinter import Image
+from turtle import down
 from fake_useragent import UserAgent
 from bs4 import BeautifulSoup
 from fp.fp import FreeProxy
@@ -32,39 +35,37 @@ class DataManager(object):
     blackProxy =[]
     
 
-    def downloadFound(name, needCount):
+    def downloadImages(name, need_сount):
         '''
         Ищем изображения по запросу
         @name - запрос
-        @needCount - необходимое количество изображений
+        @need_count - необходимое количество изображений
+        @need_small - нужно ли загружать миниатюры
         '''
-
-        urls = []
         usedURL = fm.getUsedUrl(name)
         page = fm.getLastPage(name)
-        number_file = len(usedURL)
         query = str.replace(name,' ','%20')
-        
         path = fm.getSourcesPath(name)
         jpg_files = os.listdir(path)
         imagesCount = len(jpg_files)
+        number_file = imagesCount
 
         #ищем ссылки на оригинальные изображения
-        while imagesCount < needCount: 
+        while imagesCount < need_сount: 
             urls = DataManager.__parsePage(page, query)
             actualUrl = list(set(urls) - set(usedURL))
-            print(f'Find {len(actualUrl)} urls')
+            print(f'Найдено {len(actualUrl)} urls')
             
             with open(fm.getUsedUrlPath(name), 'a') as file:
                 for url in actualUrl:
-                    nameFile = 'download_' + str(number_file) + '.jpg'
-                    isLoaded = DataManager.__download(name, url, nameFile, True)
+                    nameFile = str(number_file) + '.jpg'
+                    isLoaded = DataManager.__download(name, url, nameFile, 0)
                     usedURL.append(url)
                     file.write(url+"\n")
                     if isLoaded == True:
                         number_file+=1
                         imagesCount+=1
-            print(f'{bcolors.OKCYAN} {imagesCount} images out of {needCount} {bcolors.ENDC} ')
+            print(f'{bcolors.OKCYAN} Загружено {imagesCount} изображений из {need_сount} {bcolors.ENDC} ')
             page+=1
             fm.saveLastPage(name,page)
 
@@ -96,11 +97,12 @@ class DataManager(object):
         proxies = DataManager.lastProxies
         proxy = ''
         if(needProxy):
+            print('Ищем работающий прокси...')
             while not proxies:
                 try:
                     proxy = DataManager.frp.get()
                     if(proxy in DataManager.blackProxy):
-                        print(f'Proxy {proxy} in black list')
+                        print(f'Прокси {proxy} в черном списке')
                         continue
                     proxies = { 'http': proxy, 'https': proxy }
                     DataManager.lastProxies = proxies
@@ -109,12 +111,14 @@ class DataManager(object):
                     print(e.__class__.__name__ + ' in find proxy')  
                     DataManager.__await(5);
                     DataManager.lastProxies = ''
+                    print(f'{bcolors.OKBLUE}Очищен черный список прокси{bcolors.ENDC}')
+                    DataManager.blackProxy.clear();
     
         
         DataManager.__printInfoConnect(URL, proxies, HEADERS)
 
         try:
-            response = requests.get(URL, headers=HEADERS, timeout=2, proxies=proxies, verify=False)
+            response = requests.get(URL, headers=HEADERS, timeout=(3.05, 5), proxies=proxies, verify=False)
         except Exception as e:
             # Узнаем имя возникшего исключения
             print(e.__class__.__name__ + f': {URL}') 
@@ -142,7 +146,7 @@ class DataManager(object):
             #проверка на капчу
             if(rootDiv is None):
                 DataManager.lastProxies = {}
-                print(f'Capcha on {page} page.') 
+                print(f'Капча на {page} странице.') 
                 content = DataManager.__getHtml(page, query, True)
 
         dataState = rootDiv.get('data-state');
@@ -171,8 +175,7 @@ class DataManager(object):
                    }
          return headers
 
-
-    def __download(name, url, nameFile, newLoad):
+    def __download(name, url, nameFile, numLoad):
         '''
         Скачивание изображения по ссылке
         @name - запрос
@@ -182,23 +185,35 @@ class DataManager(object):
         '''
         HEADERS = DataManager.__getHeaders()
         path = fm.getSourcesPath(name);
+        imagePath = path +'\\'+nameFile;
         try:
-            with requests.get(url, headers=HEADERS, stream=True, timeout=(5,15)) as r:
-                with open(path +'\\'+nameFile, 'wb') as f:
-                    shutil.copyfileobj(r.raw, f)
-                    print(f'Download file[{nameFile}]: {url}')
-                    return True
+            with requests.get(url, headers = HEADERS, stream=True, timeout=(5,15)) as r:
+                with open(imagePath, 'wb') as f:
+                    f.write(r.content)
+                    #shutil.copyfileobj(r.raw, f)
+                    print(f'Скачан файл [{nameFile}]: {url}') 
         except requests.exceptions.SSLError as e:
             # Узнаем имя возникшего исключения
-            print(e.__class__.__name__ + f': {url}')
+            print(f'{bcolors.FAIL}{e.__class__.__name__}: {url}{bcolors.ENDC}')
             return False
+        except requests.exceptions.ConnectionError as e:
+            # Узнаем имя возникшего исключения
+            print(f'{bcolors.FAIL}{e.__class__.__name__}: {url}{bcolors.ENDC}')
+            DataManager.__await(5)
+            if(numLoad>5):
+                return False
+            else:
+                return DataManager.__download(name, url, nameFile, numLoad + 1)
         except Exception as e:
             # Узнаем имя возникшего исключения
-            print(e.__class__.__name__ + f': {url}')
-            DataManager.__await(randint(1,5))
-            if newLoad:
-               return DataManager.__download(name, url, nameFile, False)
-        return False
+            print(f'{bcolors.FAIL}{e.__class__.__name__}: {url}{bcolors.ENDC}')
+            DataManager.__await(3)
+            if numLoad<=1:
+               return DataManager.__download(name, url, nameFile, numLoad + 1)
+            return False
+
+        return DataManager.checkImage(imagePath, name);
+
 
 
     def __await(sec):
@@ -207,7 +222,7 @@ class DataManager(object):
         @sec - количество секунд
         '''
         for i in range(sec, 0, -1):
-            print(f'Sleep: {i:03} s', end = '\r')
+            print(f'Ждем: {i:03} s', end = '\r')
             time.sleep(1)
   
 
@@ -234,83 +249,65 @@ class DataManager(object):
             os.rename(path + '\\' + file_name, path + '\\' + indexName)
             initial_number+=1
 
-
-    def removeUnunique(name):
+    def openOrDelete(path):
         '''
-        Удаление неуникальных файлов
-        @name - запрос
+        Проверяет возможность открытия файла как изображения, в случае невозможности открытия удаляет файл
+        @path - путь к файлу
+        @return - если файл не валиден, иначе изображение
         '''
-        path = fm.getSmallPath(name)
-        if not os.path.isdir(path):
-            return 0
-        count = 0
-        file_names = os.listdir(path)
+        image = cv2.imread(path)
+        if(image is None):
+            os.remove(path)
+            print(f'{bcolors.WARNING}Удалено невалидное изображение{bcolors.ENDC}')
+        return image
 
-        for nameA in file_names:
-            image_1 = cv2.imread(f'{path}\\{nameA}')
-
-            for nameB in file_names:
-                if(nameA == nameB):
-                    continue
-                image_2 = cv2.imread(f'{path}\\{nameB}')
-                if((image_1 == image_2).all()):
-                    os.remove(f'{path}\\{nameB}')
-                    count+=1
-        print(f'Deleted {count} ununique files')
-        return len(file_names);
-
-    def removeUnvalide(name):
-        '''
-        Удаление недоступных файлов
-        @name - запрос
-        '''
-        path = fm.getSourcesPath(name)
-        if not os.path.isdir(path):
-            return
-        count = 0
-        file_names = os.listdir(path)
-        for name in file_names:
-            image = cv2.imread(f'{path}\\{name}')
-            if(image is None):
-                os.remove(f'{path}\\{name}')
-                count+=1
-        print(f'Deleted {count} unvalide files')
-     
-    
-    def resizeImages(name):
+    def resizeImage(image, path):
         '''
         Изменение размера изображения
-        @name - запрос
+        @image - загруженное изображение
+        @query - текст запроса
         '''
         height = 128
         width = 128
         size = (width, height)
-        path = fm.getSourcesPath(name)
-        smallP = fm.getSmallPath(name)
+        image = cv2.resize(image, size)
+        cv2.imwrite(path, image)
+        return image
 
-        files_small = os.listdir(smallP)
-        for sname in files_small:
-            os.remove(f'{smallP}\\{sname}')
-
+    def deleteIfExist(image, query, imagePath):
+        '''
+        Проверяет есть ли дубликаты изображения, если есть, удаляет файл
+        @image - загруженное изображение
+        @query - текст запроса
+        @imagePath - ссылка на изображения
+        @return - None, если файл не валиден, иначе изображение
+        '''
+        path = fm.getSourcesPath(query)
         file_names = os.listdir(path)
-        for fname in file_names:
-            img = cv2.imread(path+f'\\{fname}')
-            dst = cv2.resize( img, size )
-            cv2.imwrite(smallP + f'\\{fname}', dst)
+        for nameFile in file_names:
+            filePath = f'{path}\\{nameFile}';
+            if(imagePath == filePath):
+                continue
+            
+            fileImage = cv2.imread(filePath)
+            if((image == fileImage).all()):
+                os.remove(imagePath)
+                print(f'{bcolors.WARNING}Такое изображение уже загружено! Копия удалена{bcolors.ENDC}')
+                return False
+        return True
 
+    def checkImage(path, query):
+        '''
+        Проверяет нужно ли это изображение, приводит к общему формату
+        @param path - путь до изображения
+        @param query - текст запроса
+        @return True - изображение подходит, иначе False
+        '''
+        image = DataManager.openOrDelete(path)
+        if image is None:
+            return False
+        image = DataManager.resizeImage(image, path)
+        return DataManager.deleteIfExist(image, query, path)
+        
 
-    def clearData(name):
-        '''
-        Очистка данных
-        @name - запрос
-        '''
-        print(f'Start cleaning data {name}...')
-        print('Remove unvalide files...')
-        DataManager.removeUnvalide(name)
-        print('Remove non-unique files...')
-        count = DataManager.removeUnunique(name)
-        print('Update indexs')
-        DataManager.reinitIndexs(name)
-        DataManager.resizeImages(name)
-        return count
 
