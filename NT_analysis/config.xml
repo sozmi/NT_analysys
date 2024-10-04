@@ -1,0 +1,7 @@
+<config>
+	<image count = "1000"/>
+	<queries>
+		<query text="polar bear"/>
+		<query text="brown bear"/>
+	</queries>
+</config>
