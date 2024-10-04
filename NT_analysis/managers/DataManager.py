@@ -6,7 +6,7 @@ from fake_useragent import UserAgent
 from bs4 import BeautifulSoup
 from fp.fp import FreeProxy
 from managers.FileManager import FileManager as fm
-
+from logger.Logger import Logger as l
 import shutil
 import requests
 import os
@@ -14,16 +14,7 @@ import time
 import json
 import cv2
 
-class bcolors:
-    HEADER = '\033[95m'
-    OKBLUE = '\033[94m'
-    OKCYAN = '\033[96m'
-    OKGREEN = '\033[92m'
-    WARNING = '\033[93m'
-    FAIL = '\033[91m'
-    ENDC = '\033[0m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
+
 
 
 class DataManager(object):
@@ -54,7 +45,7 @@ class DataManager(object):
         while imagesCount < need_сount: 
             urls = DataManager.__parsePage(page, query)
             actualUrl = list(set(urls) - set(usedURL))
-            print(f'Найдено {len(actualUrl)} urls')
+            l.printInfo(f'Найдено {len(actualUrl)} urls')
             
             with open(fm.getUsedUrlPath(name), 'a') as file:
                 for url in actualUrl:
@@ -65,9 +56,10 @@ class DataManager(object):
                     if isLoaded == True:
                         number_file+=1
                         imagesCount+=1
-            print(f'{bcolors.OKCYAN} Загружено {imagesCount} изображений из {need_сount} {bcolors.ENDC} ')
+            l.printSubGood(f'Загружено {imagesCount} изображений из {need_сount}')
             page+=1
             fm.saveLastPage(name,page)
+        l.printGood(f'Все изображения {name} загружены')
 
     def __printInfoConnect(url, proxy, headers):
         '''
@@ -108,10 +100,10 @@ class DataManager(object):
                     DataManager.lastProxies = proxies
                 except Exception as e:
                     # Узнаем имя возникшего исключения
-                    print(e.__class__.__name__ + ' in find proxy')  
+                    l.printErr(e.__class__.__name__ + ' при поиске прокси')  
                     DataManager.__await(5);
                     DataManager.lastProxies = ''
-                    print(f'{bcolors.OKBLUE}Очищен черный список прокси{bcolors.ENDC}')
+                    l.printSubGood(f'Очищен черный список прокси')
                     DataManager.blackProxy.clear();
     
         
@@ -126,7 +118,7 @@ class DataManager(object):
             DataManager.blackProxy.append(proxy)
             return DataManager.__getHtml(page, query, True)
 
-        print('Connected')
+        l.printGoodSub('Подключились')
         
         return response.content
 
@@ -194,11 +186,11 @@ class DataManager(object):
                     print(f'Скачан файл [{nameFile}]: {url}') 
         except requests.exceptions.SSLError as e:
             # Узнаем имя возникшего исключения
-            print(f'{bcolors.FAIL}{e.__class__.__name__}: {url}{bcolors.ENDC}')
+            l.printErr(f'{e.__class__.__name__}: {url}')
             return False
         except requests.exceptions.ConnectionError as e:
             # Узнаем имя возникшего исключения
-            print(f'{bcolors.FAIL}{e.__class__.__name__}: {url}{bcolors.ENDC}')
+            l.printErr(f'{e.__class__.__name__}: {url}')
             DataManager.__await(5)
             if(numLoad>5):
                 return False
@@ -206,7 +198,7 @@ class DataManager(object):
                 return DataManager.__download(name, url, nameFile, numLoad + 1)
         except Exception as e:
             # Узнаем имя возникшего исключения
-            print(f'{bcolors.FAIL}{e.__class__.__name__}: {url}{bcolors.ENDC}')
+            l.printErr(f'{e.__class__.__name__}: {url}')
             DataManager.__await(3)
             if numLoad<=1:
                return DataManager.__download(name, url, nameFile, numLoad + 1)
@@ -258,7 +250,7 @@ class DataManager(object):
         image = cv2.imread(path)
         if(image is None):
             os.remove(path)
-            print(f'{bcolors.WARNING}Удалено невалидное изображение{bcolors.ENDC}')
+            l.printWarn('Удалено невалидное изображение')
         return image
 
     def resizeImage(image, path):
@@ -292,7 +284,7 @@ class DataManager(object):
             fileImage = cv2.imread(filePath)
             if((image == fileImage).all()):
                 os.remove(imagePath)
-                print(f'{bcolors.WARNING}Такое изображение уже загружено! Копия удалена{bcolors.ENDC}')
+                l.printWarn('Такое изображение уже загружено! Копия удалена')
                 return False
         return True
 
