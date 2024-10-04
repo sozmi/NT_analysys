@@ -2,8 +2,13 @@ from bs4 import BeautifulSoup
 from logger.Logger import Logger as l
 
 class ConfigManager(object):
+    '''
+    Класс отвечающий за конфигурацию проекта
+    '''
+
     need_count = 0
     queries = []
+
     def __init__(self):
         with open('config.xml', 'r') as fd:
             xml_file = fd.read() 
