@@ -1,4 +1,3 @@
-from email.mime import image
 from managers.DataManager import DataManager  as dm
 from managers.ConfigManager import ConfigManager as cm
 
