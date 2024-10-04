@@ -1,13 +1,8 @@
-﻿from email.mime import image
-from random import randint
-from tkinter import Image
-from turtle import down
-from fake_useragent import UserAgent
+﻿from fake_useragent import UserAgent
 from bs4 import BeautifulSoup
 from fp.fp import FreeProxy
 from managers.FileManager import FileManager as fm
 from logger.Logger import Logger as l
-import shutil
 import requests
 import os
 import time
@@ -182,7 +177,6 @@ class DataManager(object):
             with requests.get(url, headers = HEADERS, stream=True, timeout=(5,15)) as r:
                 with open(imagePath, 'wb') as f:
                     f.write(r.content)
-                    #shutil.copyfileobj(r.raw, f)
                     print(f'Скачан файл [{nameFile}]: {url}') 
         except requests.exceptions.SSLError as e:
             # Узнаем имя возникшего исключения
