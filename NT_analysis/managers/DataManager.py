@@ -56,7 +56,7 @@ class DataManager(object):
             fm.saveLastPage(name,page)
         l.printGood(f'Все изображения {name} загружены')
 
-    def __printInfoConnect(url, proxy, headers):
+    def __printInfoConnect(self, url, proxy, headers):
         '''
         Выводим информацию о текущем подключении
         @url - ссылка по которой подключаемся
@@ -87,31 +87,31 @@ class DataManager(object):
             print('Ищем работающий прокси...')
             while not proxies:
                 try:
-                    proxy = DataManager.frp.get()
-                    if(proxy in DataManager.blackProxy):
+                    proxy = self.frp.get()
+                    if(proxy in self.blackProxy):
                         print(f'Прокси {proxy} в черном списке')
                         continue
                     proxies = { 'http': proxy, 'https': proxy }
-                    DataManager.lastProxies = proxies
+                    self.lastProxies = proxies
                 except Exception as e:
                     # Узнаем имя возникшего исключения
                     l.printErr(e.__class__.__name__ + ' при поиске прокси')  
-                    DataManager.__await(5);
-                    DataManager.lastProxies = ''
+                    self.__await(5);
+                    self.lastProxies = ''
                     l.printSubGood(f'Очищен черный список прокси')
-                    DataManager.blackProxy.clear();
+                    self.blackProxy.clear();
     
         
-        DataManager.__printInfoConnect(URL, proxies, HEADERS)
+        self.__printInfoConnect(URL, proxies, HEADERS)
 
         try:
             response = requests.get(URL, headers=HEADERS, timeout=(3.05, 5), proxies=proxies, verify=False)
         except Exception as e:
             # Узнаем имя возникшего исключения
             print(e.__class__.__name__ + f': {URL}') 
-            DataManager.lastProxies = ''
-            DataManager.blackProxy.append(proxy)
-            return DataManager.__getHtml(page, query, True)
+            self.lastProxies = ''
+            self.blackProxy.append(proxy)
+            return self.__getHtml(page, query, True)
 
         l.printSubGood('Подключились')
         
@@ -184,24 +184,24 @@ class DataManager(object):
         except requests.exceptions.ConnectionError as e:
             # Узнаем имя возникшего исключения
             l.printErr(f'{e.__class__.__name__}: {url}')
-            DataManager.__await(5)
+            self.__await(5)
             if(numLoad>5):
                 return False
             else:
-                return DataManager.__download(name, url, nameFile, numLoad + 1)
+                return self.__download(name, url, nameFile, numLoad + 1)
         except Exception as e:
             # Узнаем имя возникшего исключения
             l.printErr(f'{e.__class__.__name__}: {url}')
-            DataManager.__await(3)
+            self.__await(3)
             if numLoad<=1:
-               return DataManager.__download(name, url, nameFile, numLoad + 1)
+               return self.__download(name, url, nameFile, numLoad + 1)
             return False
 
-        return DataManager.checkImage(imagePath, name);
+        return self.checkImage(imagePath, name);
 
 
 
-    def __await(sec):
+    def __await(self, sec):
         '''
         Ожидание с выводом в консоль
         @sec - количество секунд
@@ -234,7 +234,7 @@ class DataManager(object):
             os.rename(path + '\\' + file_name, path + '\\' + indexName)
             initial_number+=1
 
-    def openOrDelete(path):
+    def openOrDelete(self, path):
         '''
         Проверяет возможность открытия файла как изображения, в случае невозможности открытия удаляет файл
         @path - путь к файлу
@@ -246,20 +246,18 @@ class DataManager(object):
             l.printWarn('Удалено невалидное изображение')
         return image
 
-    def resizeImage(image, path):
+    def resizeImage(self, image, path):
         '''
         Изменение размера изображения
         @image - загруженное изображение
         @query - текст запроса
         '''
-        height = 128
-        width = 128
-        size = (width, height)
+        size = self.config.image_size
         image = cv2.resize(image, size)
         cv2.imwrite(path, image)
         return image
 
-    def deleteIfExist(image, query, imagePath):
+    def deleteIfExist(self, image, query, imagePath):
         '''
         Проверяет есть ли дубликаты изображения, если есть, удаляет файл
         @image - загруженное изображение
@@ -281,18 +279,18 @@ class DataManager(object):
                 return False
         return True
 
-    def checkImage(path, query):
+    def checkImage(self, path, query):
         '''
         Проверяет нужно ли это изображение, приводит к общему формату
         @param path - путь до изображения
         @param query - текст запроса
         @return True - изображение подходит, иначе False
         '''
-        image = DataManager.openOrDelete(path)
+        image = self.openOrDelete(path)
         if image is None:
             return False
-        image = DataManager.resizeImage(image, path)
-        return DataManager.deleteIfExist(image, query, path)
+        image = self.resizeImage(image, path)
+        return self.deleteIfExist(image, query, path)
         
 
 

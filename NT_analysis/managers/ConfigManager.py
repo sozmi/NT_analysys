@@ -20,7 +20,10 @@ class ConfigManager(object):
             xml_file = fd.read() 
             soup = BeautifulSoup(xml_file, 'lxml')
             config = soup.find('config')
-            self.need_count = int(config.find('image')['count'])
+
+            img = config.find('image')
+            self.need_count = int(img['count'])
+            self.image_size = (int(img['width']), int(img['height']))
 
             queries = config.find('queries')
             for query in queries.findAll('query'):
