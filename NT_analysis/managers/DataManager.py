@@ -2,6 +2,7 @@
 from bs4 import BeautifulSoup
 from fp.fp import FreeProxy
 from managers.FileManager import FileManager as fm
+from managers.ProxyManager import ProxyManager as pm
 from logger.Logger import Logger as l
 import requests
 import os
@@ -16,12 +17,11 @@ class DataManager(object):
     '''
     Класс отвечает за получение и загрузку данных
     '''
-    frp = FreeProxy(rand=True)
-    lastProxies = {}
-    blackProxy =[]
+    def __init__(self) -> None:
+        self.proxy = pm()
     
 
-    def downloadImages(name, need_сount):
+    def downloadImages(self, name, need_сount):
         '''
         Ищем изображения по запросу
         @name - запрос
@@ -38,7 +38,7 @@ class DataManager(object):
 
         #ищем ссылки на оригинальные изображения
         while imagesCount < need_сount: 
-            urls = DataManager.__parsePage(page, query)
+            urls = self.__parsePage(page, query)
             actualUrl = list(set(urls) - set(usedURL))
             l.printInfo(f'Найдено {len(actualUrl)} urls')
             
@@ -56,52 +56,32 @@ class DataManager(object):
             fm.saveLastPage(name,page)
         l.printGood(f'Все изображения {name} загружены')
 
-    def __printInfoConnect(url, proxy, headers):
+    def __printInfoConnect(url, bproxy, headers):
         '''
         Выводим информацию о текущем подключении
         @url - ссылка по которой подключаемся
         @proxy - ip proxy
         @headers - заголовки строки подключения
         '''
-        if not proxy:
-            proxy = 'no'
+        if not bproxy:
+            bproxy = 'no'
 
         print()
         print(f'URL: {url}')
-        print(f'Proxy: {proxy}')
+        print(f'Proxy: {bproxy}')
         print(f'Headers UA: {headers}')
 
 
-    def __getHtml(page, query, needProxy):
+    def __getHtml(self, page, query):
         '''
         Получение кода html страницы
         @page - номер страницы
         @query - запрос
-        @needProxy - нужно ли использовать прокси при подключении
         '''
         URL = f'https://yandex.ru/images/touch/search?from=tabbar&p={page}&text={query}&itype=jpg'
         HEADERS = DataManager.__getHeaders()
-        proxies = DataManager.lastProxies
-        proxy = ''
-        if(needProxy):
-            print('Ищем работающий прокси...')
-            while not proxies:
-                try:
-                    proxy = DataManager.frp.get()
-                    if(proxy in DataManager.blackProxy):
-                        print(f'Прокси {proxy} в черном списке')
-                        continue
-                    proxies = { 'http': proxy, 'https': proxy }
-                    DataManager.lastProxies = proxies
-                except Exception as e:
-                    # Узнаем имя возникшего исключения
-                    l.printErr(e.__class__.__name__ + ' при поиске прокси')  
-                    DataManager.__await(5);
-                    DataManager.lastProxies = ''
-                    l.printSubGood(f'Очищен черный список прокси')
-                    DataManager.blackProxy.clear();
-    
-        
+        p =self.proxy.get_next();
+        proxies = { 'http': p, 'https': p }
         DataManager.__printInfoConnect(URL, proxies, HEADERS)
 
         try:
@@ -109,32 +89,29 @@ class DataManager(object):
         except Exception as e:
             # Узнаем имя возникшего исключения
             print(e.__class__.__name__ + f': {URL}') 
-            DataManager.lastProxies = ''
-            DataManager.blackProxy.append(proxy)
-            return DataManager.__getHtml(page, query, True)
+            return self.__getHtml(page, query, True)
 
-        l.printGoodSub('Подключились')
+        l.printSubGoodS('Подключились')
         
         return response.content
 
 
-    def __parsePage(page,query):
+    def __parsePage(self, page, query):
         '''
         Разбор кода html страницы
         @page - номер страницы
         @query - запрос
         '''
-        content = DataManager.__getHtml(page, query, False)
+
         #получаем содержимое страницы
         rootDiv = None
         while rootDiv is None:
+            content = self.__getHtml(page, query)
             root = BeautifulSoup(content, 'html.parser')
             rootDiv = root.find('div', class_="Root", id=lambda x: x and x.startswith('ImagesApp-'))
             #проверка на капчу
             if(rootDiv is None):
-                DataManager.lastProxies = {}
                 print(f'Капча на {page} странице.') 
-                content = DataManager.__getHtml(page, query, True)
 
         dataState = rootDiv.get('data-state');
         jdata = json.loads(dataState)
