@@ -1,7 +1,17 @@
 <config>
-	<image count = "1000"/>
+	<image count="1000" height="128" width="128"/>
 	<queries>
 		<query text="polar bear"/>
 		<query text="brown bear"/>
+		<query text="rabbit"/>
 	</queries>
+	
+	<request>
+		<header isGenerationUA="True">
+			<default name="User-Agent">Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36</default>
+			<default name="Accept-Encoding">gzip, deflate, br, zstd</default>
+			<default name="Accept-Language">ru,en;q=0.9</default>
+			<default name="Accept">text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7'</default>
+		</header>
+	</request>
 </config>
