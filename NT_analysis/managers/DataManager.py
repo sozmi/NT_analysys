@@ -2,15 +2,13 @@
 from bs4 import BeautifulSoup
 from fp.fp import FreeProxy
 from managers.FileManager import FileManager as fm
+from managers.ConfigManager import ConfigManager as cm
 from logger.Logger import Logger as l
 import requests
 import os
 import time
 import json
 import cv2
-
-
-
 
 class DataManager(object):
     '''
@@ -19,9 +17,11 @@ class DataManager(object):
     frp = FreeProxy(rand=True)
     lastProxies = {}
     blackProxy =[]
-    
+    config = cm(False)
+    def __init__(self, config):
+        self.config = config
 
-    def downloadImages(name, need_сount):
+    def downloadImages(self, name, need_сount):
         '''
         Ищем изображения по запросу
         @name - запрос
@@ -38,14 +38,14 @@ class DataManager(object):
 
         #ищем ссылки на оригинальные изображения
         while imagesCount < need_сount: 
-            urls = DataManager.__parsePage(page, query)
+            urls = self.__parsePage(page, query)
             actualUrl = list(set(urls) - set(usedURL))
             l.printInfo(f'Найдено {len(actualUrl)} urls')
             
             with open(fm.getUsedUrlPath(name), 'a') as file:
                 for url in actualUrl:
                     nameFile = str(number_file) + '.jpg'
-                    isLoaded = DataManager.__download(name, url, nameFile, 0)
+                    isLoaded = self.__download(name, url, nameFile, 0)
                     usedURL.append(url)
                     file.write(url+"\n")
                     if isLoaded == True:
@@ -72,7 +72,7 @@ class DataManager(object):
         print(f'Headers UA: {headers}')
 
 
-    def __getHtml(page, query, needProxy):
+    def __getHtml(self, page, query, needProxy):
         '''
         Получение кода html страницы
         @page - номер страницы
@@ -80,8 +80,8 @@ class DataManager(object):
         @needProxy - нужно ли использовать прокси при подключении
         '''
         URL = f'https://yandex.ru/images/touch/search?from=tabbar&p={page}&text={query}&itype=jpg'
-        HEADERS = DataManager.__getHeaders()
-        proxies = DataManager.lastProxies
+        HEADERS = self.__getHeaders()
+        proxies = self.lastProxies
         proxy = ''
         if(needProxy):
             print('Ищем работающий прокси...')
@@ -113,18 +113,18 @@ class DataManager(object):
             DataManager.blackProxy.append(proxy)
             return DataManager.__getHtml(page, query, True)
 
-        l.printGoodSub('Подключились')
+        l.printSubGood('Подключились')
         
         return response.content
 
 
-    def __parsePage(page,query):
+    def __parsePage(self, page, query):
         '''
         Разбор кода html страницы
         @page - номер страницы
         @query - запрос
         '''
-        content = DataManager.__getHtml(page, query, False)
+        content = self.__getHtml(page, query, False)
         #получаем содержимое страницы
         rootDiv = None
         while rootDiv is None:
@@ -132,9 +132,9 @@ class DataManager(object):
             rootDiv = root.find('div', class_="Root", id=lambda x: x and x.startswith('ImagesApp-'))
             #проверка на капчу
             if(rootDiv is None):
-                DataManager.lastProxies = {}
+                self.lastProxies = {}
                 print(f'Капча на {page} странице.') 
-                content = DataManager.__getHtml(page, query, True)
+                content = self.__getHtml(page, query, True)
 
         dataState = rootDiv.get('data-state');
         jdata = json.loads(dataState)
@@ -150,19 +150,18 @@ class DataManager(object):
         return links
 
 
-    def __getHeaders():
+    def __getHeaders(self):
          '''
          Получение случайного заголовка страницы
          '''
-         ua = UserAgent(os='windows',min_percentage=40)
-         headers = {'User-Agent': ua.random,
-                   'Accept-Encoding': 'gzip, deflate, br, zstd',
-                   'Accept-Language': 'ru,en;q=0.9',
-                   'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7'
-                   }
+         headers = self.config.header
+         if self.config.need_create_ua:
+            ua = UserAgent()
+            headers['User-Agent'] = ua.random
+
          return headers
 
-    def __download(name, url, nameFile, numLoad):
+    def __download(self, name, url, nameFile, numLoad):
         '''
         Скачивание изображения по ссылке
         @name - запрос
@@ -170,7 +169,7 @@ class DataManager(object):
         @nameFile - название файла
         @newLoad - индикатор первый ли вызов функции
         '''
-        HEADERS = DataManager.__getHeaders()
+        HEADERS = self.__getHeaders()
         path = fm.getSourcesPath(name);
         imagePath = path +'\\'+nameFile;
         try:
@@ -212,7 +211,7 @@ class DataManager(object):
             time.sleep(1)
   
 
-    def reinitIndexs(name):
+    def reinitIndexs(self, name):
         '''
         Изменение номеров файлов по порядку 0000, 0001 ...
         @name - запрос
