@@ -1,5 +1,3 @@
-from email import header
-from urllib import request
 from bs4 import BeautifulSoup
 from logger.Logger import Logger as l
 
