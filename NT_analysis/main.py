@@ -6,10 +6,10 @@ def main():
     conf = cm()
     need_count = conf.need_count
     queries = conf.queries
-    data = dm()
+    data = dm(conf)
     for query in queries:
         data.downloadImages(query, need_count);
-        dm.reinitIndexs(query)
+        data.reinitIndexs(query)
               
 
 if __name__ == '__main__':

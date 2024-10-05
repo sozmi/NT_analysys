@@ -2,6 +2,7 @@
 from bs4 import BeautifulSoup
 from fp.fp import FreeProxy
 from managers.FileManager import FileManager as fm
+from managers.ConfigManager import ConfigManager as cm
 from managers.ProxyManager import ProxyManager as pm
 from logger.Logger import Logger as l
 import requests
@@ -10,16 +11,13 @@ import time
 import json
 import cv2
 
-
-
-
 class DataManager(object):
     '''
     Класс отвечает за получение и загрузку данных
     '''
-    def __init__(self) -> None:
+    def __init__(self, config):
         self.proxy = pm()
-    
+        self.config = config
 
     def downloadImages(self, name, need_сount):
         '''
@@ -45,7 +43,7 @@ class DataManager(object):
             with open(fm.getUsedUrlPath(name), 'a') as file:
                 for url in actualUrl:
                     nameFile = str(number_file) + '.jpg'
-                    isLoaded = DataManager.__download(name, url, nameFile, 0)
+                    isLoaded = self.__download(name, url, nameFile, 0)
                     usedURL.append(url)
                     file.write(url+"\n")
                     if isLoaded == True:
@@ -56,7 +54,7 @@ class DataManager(object):
             fm.saveLastPage(name,page)
         l.printGood(f'Все изображения {name} загружены')
 
-    def __printInfoConnect(url, bproxy, headers):
+    def __printInfoConnect(self, url, bproxy, headers):
         '''
         Выводим информацию о текущем подключении
         @url - ссылка по которой подключаемся
@@ -91,7 +89,7 @@ class DataManager(object):
             print(e.__class__.__name__ + f': {URL}') 
             return self.__getHtml(page, query, True)
 
-        l.printSubGoodS('Подключились')
+        l.printSubGood('Подключились')
         
         return response.content
 
@@ -127,19 +125,18 @@ class DataManager(object):
         return links
 
 
-    def __getHeaders():
+    def __getHeaders(self):
          '''
          Получение случайного заголовка страницы
          '''
-         ua = UserAgent(os='windows',min_percentage=40)
-         headers = {'User-Agent': ua.random,
-                   'Accept-Encoding': 'gzip, deflate, br, zstd',
-                   'Accept-Language': 'ru,en;q=0.9',
-                   'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7'
-                   }
+         headers = self.config.header
+         if self.config.need_create_ua:
+            ua = UserAgent()
+            headers['User-Agent'] = ua.random
+
          return headers
 
-    def __download(name, url, nameFile, numLoad):
+    def __download(self, name, url, nameFile, numLoad):
         '''
         Скачивание изображения по ссылке
         @name - запрос
@@ -147,7 +144,7 @@ class DataManager(object):
         @nameFile - название файла
         @newLoad - индикатор первый ли вызов функции
         '''
-        HEADERS = DataManager.__getHeaders()
+        HEADERS = self.__getHeaders()
         path = fm.getSourcesPath(name);
         imagePath = path +'\\'+nameFile;
         try:
@@ -162,24 +159,24 @@ class DataManager(object):
         except requests.exceptions.ConnectionError as e:
             # Узнаем имя возникшего исключения
             l.printErr(f'{e.__class__.__name__}: {url}')
-            DataManager.__await(5)
+            self.__await(5)
             if(numLoad>5):
                 return False
             else:
-                return DataManager.__download(name, url, nameFile, numLoad + 1)
+                return self.__download(name, url, nameFile, numLoad + 1)
         except Exception as e:
             # Узнаем имя возникшего исключения
             l.printErr(f'{e.__class__.__name__}: {url}')
-            DataManager.__await(3)
+            self.__await(3)
             if numLoad<=1:
-               return DataManager.__download(name, url, nameFile, numLoad + 1)
+               return self.__download(name, url, nameFile, numLoad + 1)
             return False
 
-        return DataManager.checkImage(imagePath, name);
+        return self.checkImage(imagePath, name);
 
 
 
-    def __await(sec):
+    def __await(self, sec):
         '''
         Ожидание с выводом в консоль
         @sec - количество секунд
@@ -189,7 +186,7 @@ class DataManager(object):
             time.sleep(1)
   
 
-    def reinitIndexs(name):
+    def reinitIndexs(self, name):
         '''
         Изменение номеров файлов по порядку 0000, 0001 ...
         @name - запрос
@@ -212,7 +209,7 @@ class DataManager(object):
             os.rename(path + '\\' + file_name, path + '\\' + indexName)
             initial_number+=1
 
-    def openOrDelete(path):
+    def openOrDelete(self, path):
         '''
         Проверяет возможность открытия файла как изображения, в случае невозможности открытия удаляет файл
         @path - путь к файлу
@@ -224,20 +221,18 @@ class DataManager(object):
             l.printWarn('Удалено невалидное изображение')
         return image
 
-    def resizeImage(image, path):
+    def resizeImage(self, image, path):
         '''
         Изменение размера изображения
         @image - загруженное изображение
         @query - текст запроса
         '''
-        height = 128
-        width = 128
-        size = (width, height)
+        size = self.config.image_size
         image = cv2.resize(image, size)
         cv2.imwrite(path, image)
         return image
 
-    def deleteIfExist(image, query, imagePath):
+    def deleteIfExist(self, image, query, imagePath):
         '''
         Проверяет есть ли дубликаты изображения, если есть, удаляет файл
         @image - загруженное изображение
@@ -259,18 +254,18 @@ class DataManager(object):
                 return False
         return True
 
-    def checkImage(path, query):
+    def checkImage(self, path, query):
         '''
         Проверяет нужно ли это изображение, приводит к общему формату
         @param path - путь до изображения
         @param query - текст запроса
         @return True - изображение подходит, иначе False
         '''
-        image = DataManager.openOrDelete(path)
+        image = self.openOrDelete(path)
         if image is None:
             return False
-        image = DataManager.resizeImage(image, path)
-        return DataManager.deleteIfExist(image, query, path)
+        image = self.resizeImage(image, path)
+        return self.deleteIfExist(image, query, path)
         
 
 
