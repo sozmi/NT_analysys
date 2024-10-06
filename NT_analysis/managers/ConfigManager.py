@@ -1,4 +1,3 @@
-from re import S
 from bs4 import BeautifulSoup
 from logger.Logger import Logger as l
 
