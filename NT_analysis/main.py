@@ -4,7 +4,7 @@ from managers.ConfigManager import ConfigManager as cm
 
 def main():     
     conf = cm()
-    need_count = conf.need_count
+    need_count = conf.image_count
     queries = conf.queries
     data = dm(conf)
     for query in queries:

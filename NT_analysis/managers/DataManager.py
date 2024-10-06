@@ -1,8 +1,7 @@
-﻿from fake_useragent import UserAgent
-from bs4 import BeautifulSoup
-from fp.fp import FreeProxy
+﻿from bs4 import BeautifulSoup
+from fake_headers import Headers
 from managers.FileManager import FileManager as fm
-from managers.ConfigManager import ConfigManager as cm
+from managers.ProxyManager import ProxyManager as pm
 from logger.Logger import Logger as l
 import requests
 import os
@@ -14,12 +13,11 @@ class DataManager(object):
     '''
     Класс отвечает за получение и загрузку данных
     '''
-    frp = FreeProxy(rand=True)
-    lastProxies = {}
-    blackProxy =[]
-    config = cm(False)
+
     def __init__(self, config):
+        self.proxy = pm()
         self.config = config
+        self.fake_header = Headers(browser="chrome", os="win", headers=True)
 
     def downloadImages(self, name, need_сount):
         '''
@@ -56,67 +54,44 @@ class DataManager(object):
             fm.saveLastPage(name,page)
         l.printGood(f'Все изображения {name} загружены')
 
-    def __printInfoConnect(self, url, proxy, headers):
+    def __printInfoConnect(self, url, bproxy, headers):
         '''
         Выводим информацию о текущем подключении
         @url - ссылка по которой подключаемся
         @proxy - ip proxy
         @headers - заголовки строки подключения
         '''
-        if not proxy:
-            proxy = 'no'
+        if not bproxy:
+            bproxy = 'no'
 
         print()
         print(f'URL: {url}')
-        print(f'Proxy: {proxy}')
+        print(f'Proxy: {bproxy}')
         print(f'Headers UA: {headers}')
 
 
-    def __getHtml(self, page, query, needProxy):
+    def __getHtml(self, page, query, use_last = False):
         '''
         Получение кода html страницы
         @page - номер страницы
         @query - запрос
-        @needProxy - нужно ли использовать прокси при подключении
         '''
         URL = f'https://yandex.ru/images/touch/search?from=tabbar&p={page}&text={query}&itype=jpg'
         HEADERS = self.__getHeaders()
-        proxies = self.lastProxies
-        proxy = ''
-        if(needProxy):
-            print('Ищем работающий прокси...')
-            while not proxies:
-                try:
-                    proxy = self.frp.get()
-                    if(proxy in self.blackProxy):
-                        print(f'Прокси {proxy} в черном списке')
-                        continue
-                    proxies = { 'http': proxy, 'https': proxy }
-                    self.lastProxies = proxies
-                except Exception as e:
-                    # Узнаем имя возникшего исключения
-                    l.printErr(e.__class__.__name__ + ' при поиске прокси')  
-                    self.__await(5);
-                    self.lastProxies = ''
-                    l.printSubGood(f'Очищен черный список прокси')
-                    self.blackProxy.clear();
-    
-        
+        proxies = self.proxy.get() if use_last else self.proxy.get_next();
+        if(proxies['http'] == ''):
+            l.printInfo('Новая итерация по списку прокси')
+            self.__await(30)
         self.__printInfoConnect(URL, proxies, HEADERS)
 
         try:
-            response = requests.get(URL, headers=HEADERS, timeout=(3.05, 5), proxies=proxies, verify=False)
+            response = requests.get(URL, headers=HEADERS, timeout=(3, 10), proxies=proxies, verify=False)
         except Exception as e:
-            # Узнаем имя возникшего исключения
-            print(e.__class__.__name__ + f': {URL}') 
-            self.lastProxies = ''
-            self.blackProxy.append(proxy)
-            return self.__getHtml(page, query, True)
-
+            l.printErr(f'{e.__class__.__name__}: {URL}')
+            self.__await(1)
+            return self.__getHtml(page, query)
         l.printSubGood('Подключились')
-        
         return response.content
-
 
     def __parsePage(self, page, query):
         '''
@@ -124,28 +99,36 @@ class DataManager(object):
         @page - номер страницы
         @query - запрос
         '''
-        content = self.__getHtml(page, query, False)
+
         #получаем содержимое страницы
         rootDiv = None
+        use_last = True
         while rootDiv is None:
+            content = self.__getHtml(page, query, use_last)
             root = BeautifulSoup(content, 'html.parser')
             rootDiv = root.find('div', class_="Root", id=lambda x: x and x.startswith('ImagesApp-'))
             #проверка на капчу
             if(rootDiv is None):
-                self.lastProxies = {}
                 print(f'Капча на {page} странице.') 
-                content = self.__getHtml(page, query, True)
+                use_last = False
+                self.__await(1)
 
         dataState = rootDiv.get('data-state');
         jdata = json.loads(dataState)
         jent = jdata['initialState']['serpList']['items']['entities']
         
         links = []
-        #получаем url оригинальных изображений
+        #получаем url изображений
         for item in jent:
-            url = jent[item]['origUrl'];
-            print(url)
-            links.append(url)
+            #image - аватары изображений, originUrl - изображения в оригинальном формате
+            if self.config.image_small:
+                url ='http:' + jent[item]['image']
+                print(url)
+                links.append(url)
+            else:
+                url = jent[item]['originUrl']
+                print(url)
+                links.append(url)
 
         return links
 
@@ -154,12 +137,11 @@ class DataManager(object):
          '''
          Получение случайного заголовка страницы
          '''
-         headers = self.config.header
-         if self.config.need_create_ua:
-            ua = UserAgent()
-            headers['User-Agent'] = ua.random
+         header = self.config.header
+         if self.config.generate_header:
+            header = self.fake_header.generate() 
 
-         return headers
+         return header
 
     def __download(self, name, url, nameFile, numLoad):
         '''
@@ -173,7 +155,7 @@ class DataManager(object):
         path = fm.getSourcesPath(name);
         imagePath = path +'\\'+nameFile;
         try:
-            with requests.get(url, headers = HEADERS, stream=True, timeout=(5,15)) as r:
+            with requests.get(url, headers = HEADERS, stream=True, timeout=(5,15), verify=False) as r:
                 with open(imagePath, 'wb') as f:
                     f.write(r.content)
                     print(f'Скачан файл [{nameFile}]: {url}') 
