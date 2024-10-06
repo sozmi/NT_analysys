@@ -1,5 +1,5 @@
 <config>
-	<image count="1000" height="128" width="128"/>
+	<image count="1000" height="128" width="128" avatars="True"/>
 	<queries>
 		<query text="polar bear"/>
 		<query text="brown bear"/>
@@ -7,7 +7,7 @@
 	</queries>
 	
 	<request>
-		<header isGenerationUA="True">
+		<header generate-header="True">
 			<default name="User-Agent">Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36</default>
 			<default name="Accept-Encoding">gzip, deflate, br, zstd</default>
 			<default name="Accept-Language">ru,en;q=0.9</default>
