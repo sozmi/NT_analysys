@@ -1,6 +1,4 @@
-from email.mime import image
 import sys
-import PySide6
 from PySide6.QtGui import QPixmap, QIcon
 from PySide6.QtWidgets import QMainWindow, QApplication, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QWidget, QComboBox
 
