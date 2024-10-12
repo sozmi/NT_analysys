@@ -365,3 +365,4 @@ FodyWeavers.xsd
 /NT_analysis/data
 /NT_analysis/NT_analysis.pyproj
 NT_analysis.sln
+/NT_analysis/.pylintrc
