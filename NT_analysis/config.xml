@@ -3,7 +3,6 @@
 	<queries>
 		<query text="polar bear"/>
 		<query text="brown bear"/>
-		<query text="rabbit"/>
 	</queries>
 	
 	<request>

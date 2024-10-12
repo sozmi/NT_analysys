@@ -33,7 +33,7 @@ class Iterator():
         Переходим к следующему элементу
         @return В случае достижения первого элемента None, иначе сам элемент
         '''
-        if (self.counter < 0):
+        if self.counter < 0:
             return None
 
         if self.counter == 0:
@@ -58,4 +58,9 @@ class Iterator():
             return None
 
         self.counter += 1
+        return self.data[self.counter]
+
+    def get(self):
+        if len(self.data) <= self.counter or self.counter<0:
+            return None
         return self.data[self.counter]

@@ -14,6 +14,15 @@ class FileManager:
         path = FileManager.create_ds_folder(name)
         return FileManager.create_folder(path + '\\__systems')
 
+    def get_ds_folder():
+        '''
+        Создает папку "\\dataset"
+        @name - наименование(запрос) датасета
+        @return - путь к папке датасета
+        '''
+        path = f'{FileManager.create_data_folder()}\\datasets'
+        return FileManager.create_folder(path)
+
     def create_ds_folder(name):
         '''
         Создает папку "\\dataset\\name"
@@ -21,6 +30,14 @@ class FileManager:
         @return - путь к папке датасета
         '''
         path = f'{FileManager.create_data_folder()}\\datasets\\{name}'
+        return FileManager.create_folder(path)
+    
+    def create_annotation_folder():
+        '''
+        Создает папку "\\annotation"
+        @return - путь к папке c аннотациями
+        '''
+        path = f'{FileManager.create_data_folder()}\\annotation'
         return FileManager.create_folder(path)
 
     def create_data_folder():
@@ -48,6 +65,14 @@ class FileManager:
         @return - путь к файлу с url
         '''
         return FileManager.get_systems_path(name) + '\\url.txt'
+    
+    def get_annotation_path(name):
+        '''
+        Получает путь к файлу, хранящему значение последней загруженной страницы
+        @name - наименование(запрос) датасета
+        @return - путь к файлу с информацией о странице
+        '''
+        return FileManager.get_systems_path(name) + '\\annotation.csv'
 
     def get_page_path(name):
         '''
@@ -101,3 +126,10 @@ class FileManager:
             with open(path, 'r', encoding="utf-8") as file:
                 count_page = int(file.read()) + 1
         return count_page
+
+    def get_annotations():
+        '''
+        Получает список аннотаций
+        '''
+        path = FileManager.create_annotation_folder()
+        return os.listdir(path)

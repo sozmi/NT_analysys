@@ -3,13 +3,15 @@ import os
 import json
 import requests
 import cv2
+import datetime
+import pandas as pd
 
 from bs4 import BeautifulSoup
 from fake_headers import Headers
 
 from managers.FileManager import FileManager as fm
 from managers.ProxyManager import ProxyManager as pm
-from logger.Logger import Logger as l
+from util.Logger import Logger as l
 
 
 class DataManager:
@@ -179,7 +181,20 @@ class DataManager:
                 return self.__download(query, url, file_name, count_load + 1)
             return False
 
-        return self.check_image(path_image, query)
+        valid_image = self.check_image(path_image, query)
+        if valid_image:
+            path_annot = fm.get_annotation_path(query)
+            if not os.path.exists(path_annot):
+                cols = ['date', 'url', 'file_name']
+                df = pd.DataFrame(data=cols)
+                df.to_csv(path_annot, index=False, mode='a')
+
+            today = datetime.datetime.today()
+            data_list = []
+            data_list.append((today.strftime("%d-%m-%Y-%H.%M.%S"), url, file_name))
+            df = pd.DataFrame(data=data_list)
+            df.to_csv(path_annot, header=False, index=False, mode='a')
+        return valid_image
 
     def __await(self, sec):
         '''
@@ -196,23 +211,32 @@ class DataManager:
         @name - запрос
         '''
         path = fm.get_sources_path(name)
-        jpg_files = os.listdir(path)
-        digit_len = len(str(len(jpg_files)))
-
+        path_annot = fm.get_annotation_path(name)
+        
+        df = pd.read_csv(path_annot)
+        headers = df[0]
+        df.drop(0, inplace=True)
+        images_count = len(df)
+        digit_len = len(str(images_count))
+        
         # Создаём список файлов в папке
         initial_number = 0
         # Перебираем каждый файл и увеличиваем порядковый номер
-        for file_name in jpg_files:
-            os.rename(path+'\\'+file_name, path +
-                      '\\' + f'tre_{initial_number}.jpg')
+        for row in df:
+            file_name = row['file_name']
+            os.rename(f'{path}\\{file_name}', f'{path}\\temp_{initial_number}.jpg')
+            row['file_name'] = file_name
             initial_number += 1
 
-        file_names = os.listdir(path)
         initial_number = 0
-        for file_name in file_names:
-            index_name = str(initial_number).zfill(digit_len) + '.jpg'
-            os.rename(path + '\\' + file_name, path + '\\' + index_name)
+        for row in df:
+            file_name = row['file_name']
+            index = str(initial_number).zfill(digit_len)
+            os.rename(f'{path}\\{file_name}', f'{path}\\{index}.jpg')
             initial_number += 1
+        df.append()
+        ndf = pd.DataFrame(data = df, headers = headers)
+        ndf.to_csv(path_annot, index=False)
 
     def open_or_delete(self, path):
         '''
@@ -271,3 +295,24 @@ class DataManager:
             return False
         image = self.resize_image(image, path)
         return self.delete_if_exist(image, query, path)
+
+    def create_dataset_from_files(self, queries):
+        cols = ['absolute_path', 'relate_path', 'tag']
+        data_matrix = []
+        for query in queries:
+            path = fm.get_sources_path(query)
+            for file in os.listdir(path):
+                relative = f'{path}\\{file}'
+                absolute = os.path.abspath(relative)
+                data_matrix.append((absolute, relative, query))
+
+        return pd.DataFrame(data=data_matrix, columns=cols)
+
+    def save_new_dataset(self, queries, index_custom=False):
+        file_name = ''
+        for query in queries:
+            file_name +=f'[{query}]'
+        path = fm.create_annotation_folder() +f'\\{file_name}.csv'
+        dataset = self.create_dataset_from_files(queries)
+        dataset.to_csv(path, index=index_custom)
+        l.print_g(f'Cоздан dataset: {file_name}.csv')

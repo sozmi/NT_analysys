@@ -1,0 +1,71 @@
+@startuml
+class ProxyManager 
+{
+    __fill_proxy_list()
+    get()
+    get_next()
+        proxies
+    __init__()
+}
+
+class DataManager 
+{
+    download_images()
+    __print_info()
+    __get_html()
+    __parse_page()
+    __get_headers()
+    __download()
+    __await()
+    indexation()
+    open_or_delete()
+    resize_image()
+    delete_if_exist()
+    check_image()
+    create_dataset_from_files()
+    save_new_dataset()
+        proxy
+    config
+    fake_header
+    __init__()
+}
+
+class FileManager 
+{
+    get_systems_path()
+    create_ds_folder()
+    create_annotation_folder()
+    create_data_folder()
+    create_folder()
+    get_used_url_path()
+    get_page_path()
+    get_sources_path()
+    get_used_url()
+    save_last_page()
+    get_last_page()
+        __init__()
+}
+
+class ConfigManager 
+{
+        image_count
+    image_small
+    generate_header
+    __init__()
+}
+
+class Logger 
+{
+    print_i()
+    print_e()
+    print_w()
+    print_g()
+    print_sub_g()
+        __init__()
+}
+
+ConfigManager   o-- Logger
+FileManager     o-- Logger
+ProxyManager    o-- Logger
+DataManager     o-- Logger
+@enduml

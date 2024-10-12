@@ -1,5 +1,5 @@
 from bs4 import BeautifulSoup
-from logger.Logger import Logger as l
+from util.Logger import Logger as l
 
 
 class ConfigManager:

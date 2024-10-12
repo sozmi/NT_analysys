@@ -1,4 +1,4 @@
-from logger.BColors import BColors as c
+from util.BColors import BColors as c
 
 class Logger():
     '''
