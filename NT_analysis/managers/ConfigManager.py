@@ -1,5 +1,5 @@
 from bs4 import BeautifulSoup
-from util.Logger import Logger as l
+import logging as log
 
 
 class ConfigManager:
@@ -18,12 +18,17 @@ class ConfigManager:
             self.image_count = int(img['count'])
             self.image_size = (int(img['width']), int(img['height']))
             self.image_small = img['avatars'] == 'True'
+            log.info('Нужно загружать миниатюры: %s', self.image_small)
+            log.info('Приводить к размеру: %s', self.image_size)
+            log.info('Необходимо скачать %d изображений', self.image_count)
 
             # получаем текст запросов
             self.queries = []
             queries = config.find('queries')
+            self.need_upd = queries['need-update'] == 'True'
             for query in queries.findAll('query'):
                 self.queries.append(query["text"])
+            log.info('Запросы: %s', self.queries)
 
             # получаем настройки заголовка запроса и данные по умолчанию
             request = config.find('request')
@@ -33,4 +38,8 @@ class ConfigManager:
             for item in h.findAll('default'):
                 self.header[item['name']] = item.text
 
-            l.print_i(f'Необходимо скачать {self.image_count} изображений по запросам: {self.queries}')
+            #получаем пути приложения
+            paths = config.find('paths')
+            self.paths = {}
+            for path in paths.findAll('path'):
+                self.paths[path['name']] = path.text 

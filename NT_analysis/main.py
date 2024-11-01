@@ -1,27 +1,49 @@
+from managers.FileManager import FileManager as fm
 from managers.ConfigManager import ConfigManager as cm
 from managers.DataManager import DataManager as dm
 from app.ui.main_window import MainWindow
 from PySide6.QtWidgets import QApplication
 import sys
+from util.formatter import CustomFormatter
+import logging as log
+
+def show_app(fm):
+    app = QApplication(sys.argv)
+    w = MainWindow(fm)
+    w.show()
+    sys.exit(app.exec())
+
+def init_logger():
+    logger = log.getLogger("NT_analysis")
+    logger.setLevel(log.DEBUG)
+    ch = log.StreamHandler()
+    ch.setLevel(log.DEBUG)
+    ch.setFormatter(CustomFormatter())
+    logger.addHandler(ch)
+
+def update_dataset(conf, fman):
+    need_count = conf.image_count
+    queries = conf.queries
+
+    data = dm(conf, fman)
+    for query in queries:
+        data.download_images(query, need_count)
+        data.indexation(query)
+    
+    data.save_new_dataset(queries)
 
 def main():
     '''
     Функция точки входа в программу
-    '''
+    ''' 
+    init_logger()
+    log.basicConfig(level= log.DEBUG)
     conf = cm()
-    need_count = conf.image_count
-    queries = conf.queries
-    app = QApplication(sys.argv)
-    w = MainWindow()
-    w.show()
-    sys.exit(app.exec())
-    #data = dm(conf)
-    #for query in queries:
-    #    data.download_images(query, need_count)
-    #    data.indexation(query)
-    
-    #data.save_new_dataset(queries)
+    fman = fm(conf)
+    if(conf.need_upd):
+        update_dataset(conf, fman)
 
+    show_app(fman)
 
 if __name__ == '__main__':
     main()

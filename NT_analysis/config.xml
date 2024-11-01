@@ -1,16 +1,23 @@
 <config>
-	<image count="1000" height="128" width="128" avatars="True"/>
-	<queries>
+	<image count="20" height="512" width="512" avatars="False"/>
+	<queries need-update="False">
 		<query text="polar bear"/>
 		<query text="brown bear"/>
 	</queries>
 	
 	<request>
-		<header generate-header="True">
+		<header generate-header="False">
 			<default name="User-Agent">Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36</default>
 			<default name="Accept-Encoding">gzip, deflate, br, zstd</default>
 			<default name="Accept-Language">ru,en;q=0.9</default>
 			<default name="Accept">text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7'</default>
 		</header>
 	</request>
+
+	<paths>
+		<path name="datasets">data\datasets</path>
+		<path name="systems">data\systems</path>
+		<path name="annotations">data\annotations</path>
+		<path name="copy_to">data\temp</path>
+	</paths>
 </config>

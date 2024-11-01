@@ -1,17 +1,16 @@
-﻿import time
-import os
+﻿import os
 import json
+import datetime
 import requests
 import cv2
-import datetime
 import pandas as pd
 
 from bs4 import BeautifulSoup
 from fake_headers import Headers
 
-from managers.FileManager import FileManager as fm
 from managers.ProxyManager import ProxyManager as pm
-from util.Logger import Logger as l
+from util.scripts import awaits
+import logging as log
 
 
 class DataManager:
@@ -19,9 +18,10 @@ class DataManager:
     Класс отвечает за получение и загрузку данных
     '''
 
-    def __init__(self, config):
+    def __init__(self, config, fm):
         self.proxy = pm()
         self.config = config
+        self.fman = fm
         self.fake_header = Headers(browser="chrome", os="win", headers=True)
 
     def download_images(self, name, need_count):
@@ -30,10 +30,10 @@ class DataManager:
         @name - запрос
         @need_count - необходимое количество изображений
         '''
-        urls_used = fm.get_used_url(name)
-        page = fm.get_last_page(name)
+        urls_used = self.fman.used_urls(name)
+        page = self.fman.last_page(name)
         query = str.replace(name, ' ', '%20')
-        path = fm.get_sources_path(name)
+        path = self.fman.get_sources_path(name)
         jpg_files = os.listdir(path)
         current_count = len(jpg_files)
         file_number = current_count
@@ -42,9 +42,9 @@ class DataManager:
         while current_count < need_count:
             urls_new = self.__parse_page(page, query)
             urls = list(set(urls_new) - set(urls_used))
-            l.print_i(f'Найдено {len(urls)} urls')
+            log.info('Найдено %s urls', len(urls))
 
-            with open(fm.get_used_url_path(name), 'a', encoding="utf-8") as file:
+            with open (self.fman.path_used_url(name), 'a', encoding="utf-8") as file:
                 for url in urls:
                     file_name = str(file_number) + '.jpg'
                     load = self.__download(name, url, file_name, 0)
@@ -53,10 +53,10 @@ class DataManager:
                     if load:
                         file_number += 1
                         current_count += 1
-            l.print_sub_g(f'Загружено {current_count} изображений из {need_count}')
+            log.info('Загружено %d изображений из %d', {current_count}, {need_count})
             page += 1
-            fm.save_last_page(name, page)
-        l.print_g(f'Все изображения {name} загружены')
+            self.fman.save_last_page(name, page)
+        log.info('Все изображения %s загружены', name)
 
     def __print_info(self, url, proxy, headers):
         '''
@@ -81,8 +81,8 @@ class DataManager:
         header = self.__get_headers()
         proxies = self.proxy.get() if use_last else self.proxy.get_next()
         if proxies['http'] == '':
-            l.print_i('Новая итерация по списку прокси')
-            self.__await(30)
+            log.info('Новая итерация по списку прокси')
+            awaits(30)
 
         self.__print_info(url, proxies, header)
 
@@ -90,10 +90,10 @@ class DataManager:
             response = requests.get(url, headers=header, timeout=(
                 3, 10), proxies=proxies, verify=False)
         except Exception as e:
-            l.print_e(f'{e.__class__.__name__}: {url}')
-            self.__await(1)
+            log.info('%s: %s', e.__class__.__name__, url)
+            awaits(1)
             return self.__get_html(page, query)
-        l.print_sub_g('Подключились')
+        log.info('Подключились')
         return response.content
 
     def __parse_page(self, page, query):
@@ -115,7 +115,7 @@ class DataManager:
             if div is None:
                 print(f'Капча на {page} странице.')
                 use_last = False
-                self.__await(1)
+                awaits(1)
 
         data_state = div.get('data-state')
         jdata = json.loads(data_state)
@@ -130,7 +130,7 @@ class DataManager:
                 print(url)
                 links.append(url)
             else:
-                url = jent[item]['originUrl']
+                url = jent[item]['origUrl']
                 print(url)
                 links.append(url)
 
@@ -155,39 +155,39 @@ class DataManager:
         @count_load - количество попыток загрузки
         '''
         header = self.__get_headers()
-        path = fm.get_sources_path(query)
+        path = self.fman.get_sources_path(query)
         path_image = path + '\\' + file_name
         try:
             with requests.get(url, headers=header, stream=True, timeout=(5, 15), verify=False) as r:
                 with open(path_image, 'wb') as f:
                     f.write(r.content)
-                    print(f'Скачан файл [{file_name}]: {url}')
+                    log.info('Скачан файл [%s]: %s', file_name, url)
         except requests.exceptions.SSLError as e:
             # Узнаем имя возникшего исключения
-            l.print_e(f'{e.__class__.__name__}: {url}')
+            log.warning('%s: %s', e.__class__.__name__, url)
             return False
         except requests.exceptions.ConnectionError as e:
             # Узнаем имя возникшего исключения
-            l.print_e(f'{e.__class__.__name__}: {url}')
-            self.__await(5)
+            log.warning('%s: %s', e.__class__.__name__, url)
+            awaits(5)
             if count_load > 5:
                 return False
             return self.__download(query, url, file_name, count_load + 1)
         except Exception as e:
             # Узнаем имя возникшего исключения
-            l.print_e(f'{e.__class__.__name__}: {url}')
-            self.__await(3)
+            log.error('%s: %s', e.__class__.__name__, url)
+            awaits(3)
             if count_load <= 1:
                 return self.__download(query, url, file_name, count_load + 1)
             return False
 
         valid_image = self.check_image(path_image, query)
         if valid_image:
-            path_annot = fm.get_annotation_path(query)
+            path_annot = self.fman.get_path_ann(query)
             if not os.path.exists(path_annot):
-                cols = ['date', 'url', 'file_name']
+                cols = [('date', 'url', 'file_name')]
                 df = pd.DataFrame(data=cols)
-                df.to_csv(path_annot, index=False, mode='a')
+                df.to_csv(path_annot, header=None, index=False, mode='a')
 
             today = datetime.datetime.today()
             data_list = []
@@ -196,47 +196,35 @@ class DataManager:
             df.to_csv(path_annot, header=False, index=False, mode='a')
         return valid_image
 
-    def __await(self, sec):
-        '''
-        Ожидание с выводом в консоль
-        @sec - количество секунд
-        '''
-        for i in range(sec, 0, -1):
-            print(f'Ждем: {i:03} s', end='\r')
-            time.sleep(1)
-
     def indexation(self, name):
         '''
         Изменение номеров файлов по порядку 0000, 0001 ...
         @name - запрос
         '''
-        path = fm.get_sources_path(name)
-        path_annot = fm.get_annotation_path(name)
-        
+        path = self.fman.get_sources_path(name)
+        path_annot = self.fman.get_path_ann(name)
+        if not os.path.exists(path):
+            return
         df = pd.read_csv(path_annot)
-        headers = df[0]
-        df.drop(0, inplace=True)
-        images_count = len(df)
+        images_count = len(df.values)
         digit_len = len(str(images_count))
-        
+        fn = 'file_name'
         # Создаём список файлов в папке
-        initial_number = 0
         # Перебираем каждый файл и увеличиваем порядковый номер
-        for row in df:
-            file_name = row['file_name']
-            os.rename(f'{path}\\{file_name}', f'{path}\\temp_{initial_number}.jpg')
-            row['file_name'] = file_name
-            initial_number += 1
+        for index, row in df.iterrows():
+            temp_name = f'temp_{index}.jpg'
+            temp_path = f'{path}\\{temp_name}'
+            os.rename(f'{path}\\{row[fn]}', temp_path)
+            row[fn] = temp_name
 
-        initial_number = 0
-        for row in df:
-            file_name = row['file_name']
-            index = str(initial_number).zfill(digit_len)
-            os.rename(f'{path}\\{file_name}', f'{path}\\{index}.jpg')
-            initial_number += 1
-        df.append()
-        ndf = pd.DataFrame(data = df, headers = headers)
-        ndf.to_csv(path_annot, index=False)
+        for index, row in df.iterrows():
+            name = str(index).zfill(digit_len)
+            temp_name = f'{name}.jpg'
+            temp_path = f'{path}\\{temp_name}'
+            os.rename(f'{path}\\{row[fn]}', temp_path)
+            row[fn] = temp_name
+
+        df.to_csv(path_annot, index=False)
 
     def open_or_delete(self, path):
         '''
@@ -247,7 +235,7 @@ class DataManager:
         image = cv2.imread(path)
         if image is None:
             os.remove(path)
-            l.print_w('Удалено невалидное изображение')
+            log.info('Удалено невалидное изображение')
         return image
 
     def resize_image(self, image, path):
@@ -269,7 +257,7 @@ class DataManager:
         @path_image - ссылка на изображения
         @return - None, если файл не валиден, иначе изображение
         '''
-        path = fm.get_sources_path(query)
+        path = self.fman.get_sources_path(query)
         file_names = os.listdir(path)
         for name in file_names:
             path_file = f'{path}\\{name}'
@@ -279,7 +267,7 @@ class DataManager:
             image_file = cv2.imread(path_file)
             if (image == image_file).all():
                 os.remove(path_image)
-                l.print_w('Такое изображение уже загружено! Копия удалена')
+                log.warning('Такое изображение уже загружено! Копия удалена')
                 return False
         return True
 
@@ -300,9 +288,11 @@ class DataManager:
         cols = ['absolute_path', 'relate_path', 'tag']
         data_matrix = []
         for query in queries:
-            path = fm.get_sources_path(query)
-            for file in os.listdir(path):
-                relative = f'{path}\\{file}'
+            path = self.fman.get_sources_path(query)
+            df = pd.read_csv(self.fman.get_path_ann(query), usecols=['file_name'])
+            for _, row in df.iterrows():
+                name = row['file_name']
+                relative = f'{path}\\{name}'
                 absolute = os.path.abspath(relative)
                 data_matrix.append((absolute, relative, query))
 
@@ -312,7 +302,7 @@ class DataManager:
         file_name = ''
         for query in queries:
             file_name +=f'[{query}]'
-        path = fm.create_annotation_folder() +f'\\{file_name}.csv'
+        path = self.fman.create_annotation_folder() +f'\\{file_name}.csv'
         dataset = self.create_dataset_from_files(queries)
         dataset.to_csv(path, index=index_custom)
-        l.print_g(f'Cоздан dataset: {file_name}.csv')
+        log.info('Cоздан dataset: %s.csv', file_name)

@@ -1,95 +1,102 @@
-from managers.FileManager import FileManager as fm
+import os
+import os.path
+from time import sleep
 from shutil import copy
-from util.Iterators import Iterator
-import pandas as pd
+from util.iterators import Iterator
 from collections import defaultdict
+import pandas as pd
 
-class Script():
+def create_folder(path):
+    '''
+    Cоздает папки по адресу
+    @path - путь к папке
+    @return - путь к папке
+    '''
+    if not os.path.isdir(path):
+        os.makedirs(path)
+    return path
 
-    def copy_to_dataset_up(queries): 
-        '''
-        Копируем из dataset/class/0000.jpg должно получиться dataset/class_0000.jpg
-        @queries - запросы
-        '''
-        cols = ['absolute_path', 'relate_path', 'tag']
-        data_matrix = []
-        for query in queries:
-            path_annot = fm.get_annotation_path(query)
-            path_from = fm.get_sources_path(query)
-            path_to = fm.get_ds_folder()
+def awaits(sec):
+    '''
+    Ожидание с выводом в консоль
+    @sec - количество секунд
+    '''
+    for i in range(sec, 0, -1):
+        print(f'Ждем: {i:03} s', end='\r')
+    sleep(1)
 
-            file_names = pd.read_csv(path_annot, header=None, columns = [2])
-            # Перебираем каждый файл и увеличиваем порядковый номер
-            for name in file_names:
-                absolute = f'{path_from}//{name}'
-                relative = f'{path_to}//{query}_{name}'
-                copy(absolute, relative)
-                data_matrix.append((absolute, relative, query))
+def get_row(path, tag):
+    relative_path = path
+    absolute_path = os.path.abspath(relative_path)
+    return [absolute_path, relative_path, tag]
 
-        df = pd.DataFrame(data=data_matrix, columns=cols)
-        df.to_csv(f'{path_to}\\annotation.csv', index = False)
-
-
-    def copy_to_dataset_up(queries): 
-        '''
-        Копируем из dataset/class/0000.jpg должно получиться dataset/class_0000.jpg
-        @queries - запросы
-        '''
-        cols = ['absolute_path', 'relate_path', 'tag']
-        data_matrix = []
-        for query in queries:
-            path_annot = fm.get_annotation_path(query)
-            path_from = fm.get_sources_path(query)
-            path_to = fm.get_ds_folder()
-
-            file_names = pd.read_csv(path_annot, header=None, columns = [2])
-            # Перебираем каждый файл и увеличиваем порядковый номер
-            for name in file_names:
-                absolute = f'{path_from}//{name}'
-                relative = f'{path_to}//{query}_{name}'
-                copy(absolute, relative)
-                data_matrix.append((absolute, relative, query))
-
-        df = pd.DataFrame(data=data_matrix, columns=cols)
-        df.to_csv(f'{path_to}\\annotation_class.csv', index = False)
+def get_images(path):
+    df = pd.read_csv(path, usecols=['relate_path', 'tag'])
+    return df.iterrows()
     
-    def copy_dataset_number(queries):
-        '''
-        Копируем из dataset/class/0000.jpg должно получиться dataset/class_0000.jpg
-        @queries - запросы
-        '''
-        cols = ['absolute_path', 'relate_path', 'tag']
-        data_matrix = []
-        i = 0
-        for query in queries:
-            path_annot = fm.get_annotation_path(query)
-            path_from = fm.get_sources_path(query)
-            path_to = fm.get_ds_folder()
+def copy_dataset_to_rand(to_folder, ann_path, ann_directory): 
+    '''
+    Копирует файлы содержащиеся в аннотациях исходных папок 
+    в формате 0.jpg
+    @to_folder - адрес куда нужно скопировать изображения
+    @ann_path - адрес исходного файла-аннотации
+    @ann_directory - адрес директории с аннотациями
+    @return - название файла аннотации
+    '''
+    data_matrix = []
+    for index, row in get_images(ann_path):
+        path_from = row['relate_path']
+        tag = row['tag']
+        path_to = to_folder + f'\\{index}.jpg'
+        copy(path_from, path_to)
+        row = get_row(path_to, tag)
+        data_matrix.append(row)
 
-            file_names = pd.read_csv(path_annot, header=None, columns = [2])
-            # Перебираем каждый файл и увеличиваем порядковый номер
-            for name in file_names:
-                absolute = f'{path_from}//{name}'
-                relative = f'{path_to}//{str(i)}.jpg'
-                i += 1
-                copy(absolute, relative)
-                data_matrix.append((absolute, relative, query))
+    cols = ['absolute_path', 'relate_path', 'tag']
+    df = pd.DataFrame(data=data_matrix, columns=cols)
+    df.to_csv(f'{to_folder}\\info.csv', index=False)
+    folder_name = os.path.basename(ann_path)
+    full_name = f'rand_{folder_name}'
+    copy(f'{to_folder}\\info.csv', f'{ann_directory}\\{full_name}')
+    return full_name
 
-        df = pd.DataFrame(data=data_matrix, columns=cols)
-        df.to_csv(f'{path_to}\\annotation_number.csv', index = False)
+def copy_dataset_to_tag(to_folder, ann_path, ann_directory):
+    '''
+    Копирует файлы содержащиеся в аннотациях исходных папок 
+    в формате classname_0000.jpg
+    @to_folder - адрес куда нужно скопировать изображения
+    @ann_path - адрес исходного файла-аннотации
+    @ann_directory - адрес директории с аннотациями
+    @return - название файла аннотации
+    '''
+    data_matrix = []
+    for _, row in get_images(ann_path):
+        path_from = row['relate_path']
+        tag = row['tag']
+        file_name = os.path.basename(path_from)
+        path_to = to_folder + f'\\{tag}_{file_name}'
+        copy(path_from, path_to)
+        row = get_row(path_to, tag)
+        data_matrix.append(row)
 
-    def get_iters_from_annotations(path_annot):
-        iters = defaultdict(list)
-        df = pd.read_csv(path_annot)
-        for index, row in df.iterrows():
-            iters[row['tag']].append(row['absolute_path'])
+    cols = ['absolute_path', 'relate_path', 'tag']
+    df = pd.DataFrame(data=data_matrix, columns=cols)
+    df.to_csv(f'{to_folder}\\info.csv', index=False)
+    folder_name = os.path.basename(ann_path)
+    full_name = f'tag_{folder_name}'
+    copy(f'{to_folder}\\info.csv', f'{ann_directory}\\{full_name}')
+    return full_name
+
+def get_iters_from_annotations(path_annot):
+    iters = defaultdict(list)
+    df = pd.read_csv(path_annot)
+    for index, row in df.iterrows():
+        iters[row['tag']].append(row['absolute_path'])
         
-        res = {}
-        for key, value in iters.items():
-            res[key] = Iterator(value);
-        return res
-
-
+    res = {}
+    for key, value in iters.items():
+        res[key] = Iterator(value)
+    return res
 
 
 

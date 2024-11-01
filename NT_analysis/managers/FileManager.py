@@ -1,135 +1,107 @@
 ﻿import os
+from util.scripts import create_folder
 
 class FileManager:
     '''
     Класс, отвечает за сохранение структуры и информации в программе
     '''
 
-    def get_systems_path(name):
+    def __init__(self, config):
         '''
-        Получает путь к системным данным
-        @name - наименование(запрос) датасета
-        @return - путь к системным данным
+        Конструктор путей приложения
+        @config - конфигурационный файл приложения
         '''
-        path = FileManager.create_ds_folder(name)
-        return FileManager.create_folder(path + '\\__systems')
+        self.path_dst = config.paths["datasets"]
+        create_folder(self.path_dst)
 
-    def get_ds_folder():
-        '''
-        Создает папку "\\dataset"
-        @name - наименование(запрос) датасета
-        @return - путь к папке датасета
-        '''
-        path = f'{FileManager.create_data_folder()}\\datasets'
-        return FileManager.create_folder(path)
+        self.path_sys = config.paths["systems"]
+        create_folder(self.path_sys)
 
-    def create_ds_folder(name):
-        '''
-        Создает папку "\\dataset\\name"
-        @name - наименование(запрос) датасета
-        @return - путь к папке датасета
-        '''
-        path = f'{FileManager.create_data_folder()}\\datasets\\{name}'
-        return FileManager.create_folder(path)
+        self.path_ann = config.paths["annotations"]
+        create_folder(self.path_ann)
+
+        self.path_copy = config.paths["copy_to"]
+        create_folder(self.path_copy)
     
-    def create_annotation_folder():
+    def create_annotation_folder(self):
         '''
         Создает папку "\\annotation"
         @return - путь к папке c аннотациями
         '''
-        path = f'{FileManager.create_data_folder()}\\annotation'
-        return FileManager.create_folder(path)
+        return self.path_ann
 
-    def create_data_folder():
-        '''
-        Создает папку с информацией, необходимой для работы приложения
-        @return - путь к папке с данными
-        '''
-        path = 'data'
-        return FileManager.create_folder(path)
-
-    def create_folder(path):
-        '''
-        Создает папки по адресу
-        @path - путь к папке
-        @return - путь к папке
-        '''
-        if not os.path.isdir(path):
-            os.makedirs(path)
-        return path
-
-    def get_used_url_path(name):
+    def path_used_url(self, name):
         '''
         Получает путь к файлу, хранящему списку ссылок, которые были обработаны в рамках запроса
         @name - наименование(запрос) датасета
         @return - путь к файлу с url
         '''
-        return FileManager.get_systems_path(name) + '\\url.txt'
+        return self.path_sys + f'\\{name}.urls'
     
-    def get_annotation_path(name):
+    def get_path_ann(self, name):
+        '''
+        Получает путь к файлу, хранящему аннотацию датасета
+        @name - наименование(запрос) датасета
+        @return - путь к файлу с информацией о странице
+        '''
+        return self.get_sources_path(name) + f'\\info.csv'
+
+    def path_page(self, name):
         '''
         Получает путь к файлу, хранящему значение последней загруженной страницы
         @name - наименование(запрос) датасета
         @return - путь к файлу с информацией о странице
         '''
-        return FileManager.get_systems_path(name) + '\\annotation.csv'
+        return self.path_sys + f'\\{name}.page'
 
-    def get_page_path(name):
-        '''
-        Получает путь к файлу, хранящему значение последней загруженной страницы
-        @name - наименование(запрос) датасета
-        @return - путь к файлу с информацией о странице
-        '''
-        return FileManager.get_systems_path(name) + '\\page.txt'
-
-    def get_sources_path(name):
+    def get_sources_path(self, name):
         '''
         Получает путь к папке с исходниками изображений
         @name - наименование(запрос) датасета
         @return - путь к файлу с ресурсами
         '''
-        path = FileManager.create_ds_folder(name)
-        return FileManager.create_folder(path + '\\sources')
+        path = self.path_dst + f'\\{name}'
+        return create_folder(path)
 
-    def get_used_url(name):
+    def used_urls(self, name):
         '''
         Получает список обработанных ссылок на изображения
         @name - наименование(запрос) датасета
         @return - список ссылок
         '''
-        path = FileManager.get_used_url_path(name)
+        path = self.path_used_url(name)
         urls = []
         if os.path.exists(path):
             with open(path, 'r', encoding="utf-8") as file:
                 urls = file.read().split('\n')
         return urls
 
-    def save_last_page(name, page):
+    def save_last_page(self, name, page):
         '''
         Сохраняет последнюю скачанную страницу
         @name - наименование(запрос) датасета
         @page - номер страницы
         '''
-        path = FileManager.get_page_path(name)
+        path = self.path_page(name)
         with open(path, 'w', encoding="utf-8") as file:
             file.write(str(page))
 
-    def get_last_page(name):
+    def last_page(self, name):
         '''
         Получает последнюю скачанную страницу для запроса
         @name - наименование(запрос) датасета
         @return - номер последней страницы
         '''
-        path = FileManager.get_page_path(name)
+        path = self.path_page(name)
         count_page = 0
         if os.path.exists(path):
             with open(path, 'r', encoding="utf-8") as file:
                 count_page = int(file.read()) + 1
         return count_page
 
-    def get_annotations():
+    def get_annotations(self):
         '''
         Получает список аннотаций
         '''
-        path = FileManager.create_annotation_folder()
+        path = self.create_annotation_folder()
         return os.listdir(path)
