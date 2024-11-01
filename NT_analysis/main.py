@@ -1,15 +1,18 @@
+import sys
+import logging as log
+
 from managers.FileManager import FileManager as fm
 from managers.ConfigManager import ConfigManager as cm
 from managers.DataManager import DataManager as dm
 from app.ui.main_window import MainWindow
 from PySide6.QtWidgets import QApplication
-import sys
-from util.formatter import CustomFormatter
-import logging as log
 
-def show_app(fm):
+from util.formatter import CustomFormatter
+
+
+def show_app(fman):
     app = QApplication(sys.argv)
-    w = MainWindow(fm)
+    w = MainWindow(fman)
     w.show()
     sys.exit(app.exec())
 
@@ -28,8 +31,7 @@ def update_dataset(conf, fman):
     data = dm(conf, fman)
     for query in queries:
         data.download_images(query, need_count)
-        data.indexation(query)
-    
+        data.indexation(query)    
     data.save_new_dataset(queries)
 
 def main():

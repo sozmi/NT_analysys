@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 from PySide6.QtGui import QPixmap, QIcon
 from PySide6.QtWidgets import QMainWindow, QLabel
 from PySide6.QtWidgets import QPushButton, QVBoxLayout, QHBoxLayout
@@ -7,7 +9,9 @@ from util.scripts import copy_dataset_to_tag as copy_ds_tags, create_folder
 from util.scripts import copy_dataset_to_rand as copy_ds_rand
 from util.scripts import get_iters_from_annotations as get_iters
 
-class  MainWindow(QMainWindow):
+
+
+class MainWindow(QMainWindow):
     def __init__(self, fm):
         super(MainWindow, self).__init__()
         self.fm = fm
@@ -15,6 +19,7 @@ class  MainWindow(QMainWindow):
         self.resize(300, 250)
         self.setWindowTitle(self.title)
         self.setWindowIcon(QIcon('app/sources/logo.jpg'))
+        self.iters = defaultdict(list);
         window = QWidget()
         vbox = QVBoxLayout()
         self.image_view = QLabel()
@@ -64,8 +69,7 @@ class  MainWindow(QMainWindow):
         path_ann, _ = QFileDialog.getOpenFileName(None, 'Выберите файл исходной аннотации')
         path_to = create_folder(f'{self.fm.path_copy}\\tag')
         ann = copy_ds_tags(path_to, path_ann, self.fm.path_ann)
-        self.cb_annot.addItem(ann)
-        
+        self.cb_annot.addItem(ann)        
 
     def btn_create_rand(self):
         path_ann, _ = QFileDialog.getOpenFileName(None, 'Выберите файл исходной аннотации')
@@ -89,7 +93,6 @@ class  MainWindow(QMainWindow):
         tag = self.cb_tag.currentText()
         if tag == 'no' or tag == '':
             return
-        
         it = self.iters[tag]
         path = it.next()
         if not path:
@@ -122,7 +125,6 @@ class  MainWindow(QMainWindow):
             img = QPixmap('app/sources/logo.jpg')
             self.image_view.setPixmap(img)
             return
-        
         it = self.iters[value]
         path = it.get()
         if not path:

@@ -2,6 +2,7 @@
 import json
 import datetime
 import requests
+import logging as log
 import cv2
 import pandas as pd
 
@@ -10,7 +11,6 @@ from fake_headers import Headers
 
 from managers.ProxyManager import ProxyManager as pm
 from util.scripts import awaits
-import logging as log
 
 
 class DataManager:

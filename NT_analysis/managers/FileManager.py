@@ -44,7 +44,7 @@ class FileManager:
         @name - наименование(запрос) датасета
         @return - путь к файлу с информацией о странице
         '''
-        return self.get_sources_path(name) + f'\\info.csv'
+        return self.get_sources_path(name) + '\\info.csv'
 
     def path_page(self, name):
         '''

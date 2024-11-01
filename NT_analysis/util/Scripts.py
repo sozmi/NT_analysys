@@ -2,8 +2,8 @@ import os
 import os.path
 from time import sleep
 from shutil import copy
-from util.iterators import Iterator
 from collections import defaultdict
+from util.iterators import Iterator
 import pandas as pd
 
 def create_folder(path):
@@ -90,7 +90,7 @@ def copy_dataset_to_tag(to_folder, ann_path, ann_directory):
 def get_iters_from_annotations(path_annot):
     iters = defaultdict(list)
     df = pd.read_csv(path_annot)
-    for index, row in df.iterrows():
+    for _, row in df.iterrows():
         iters[row['tag']].append(row['absolute_path'])
         
     res = {}

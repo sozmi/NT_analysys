@@ -1,5 +1,6 @@
-from bs4 import BeautifulSoup
 import logging as log
+from bs4 import BeautifulSoup
+
 
 
 class ConfigManager:
