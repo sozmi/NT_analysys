@@ -1,6 +1,6 @@
 <config>
 	<image count="20" height="512" width="512" avatars="False"/>
-	<queries need-update="False">
+	<queries need-update="True">
 		<query text="polar bear"/>
 		<query text="brown bear"/>
 	</queries>

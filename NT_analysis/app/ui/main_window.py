@@ -1,20 +1,26 @@
-from ast import Import
 from collections import defaultdict
 
 from PySide6.QtGui import QPixmap, QIcon
 from PySide6.QtWidgets import QMainWindow, QLabel
 from PySide6.QtWidgets import QPushButton, QVBoxLayout, QHBoxLayout
-from PySide6.QtWidgets import QWidget, QComboBox, QFileDialog
+from PySide6.QtWidgets import QWidget, QComboBox, QFileDialog, QMessageBox
 
 from util.scripts import copy_dataset_to_tag as copy_ds_tags, create_folder
 from util.scripts import copy_dataset_to_rand as copy_ds_rand
 from util.scripts import get_iters_from_annotations as get_iters
 from util.scripts import get_keys_from_dict as get_keys
 from analysis import analysis as a
-from PySide6.QtWidgets import QApplication, QDialog, QVBoxLayout, QTableWidget, QTableWidgetItem, QPushButton, QMessageBox
+
 
 class MessageDialog(QMessageBox):
+    '''
+    Класс-сообщение
+    '''
+
     def __init__(self, info):
+        '''
+        Конструктор
+        '''
         super().__init__()
         self.setWindowTitle("Сообщение")
         self.setText("Статистика DataFrame:")
@@ -22,6 +28,10 @@ class MessageDialog(QMessageBox):
         self.setStandardButtons(QMessageBox.Ok)
 
 class MainWindow(QMainWindow):
+    '''
+    Главное окно графического интерфейса
+    '''
+    
     def __init__(self, fm):
         super(MainWindow, self).__init__()
         self.fm = fm
@@ -29,7 +39,7 @@ class MainWindow(QMainWindow):
         self.resize(300, 250)
         self.setWindowTitle(self.title)
         self.setWindowIcon(QIcon('app/sources/logo.jpg'))
-        self.iters = defaultdict(list);
+        self.iters = defaultdict(list)
         window = QWidget()
         vbox = QVBoxLayout()
         self.image_view = QLabel()
@@ -88,12 +98,18 @@ class MainWindow(QMainWindow):
 
 
     def btn_create_tag(self):
+        '''
+        Нажали на кнопку копирование датасета с тэгами
+        '''
         path_ann, _ = QFileDialog.getOpenFileName(None, 'Выберите файл исходной аннотации')
         path_to = create_folder(f'{self.fm.path_copy}\\tag')
         ann = copy_ds_tags(path_to, path_ann, self.fm.path_ann)
-        self.cb_annot.addItem(ann)        
+        self.cb_annot.addItem(ann)
 
     def btn_create_rand(self):
+        '''
+        Нажали на кнопку копирование датасета со случайными номерами
+        '''
         path_ann, _ = QFileDialog.getOpenFileName(None, 'Выберите файл исходной аннотации')
         path_to = create_folder(f'{self.fm.path_copy}\\rand')
         ann = copy_ds_rand(path_to, path_ann, self.fm.path_ann)
@@ -101,17 +117,23 @@ class MainWindow(QMainWindow):
 
 
     def btn_open_click(self):
+        '''
+        Нажали на кнопку загрузки датасета
+        '''
         annot = self.cb_annot.currentText()
         if annot == 'no':
             return
 
         path_annot = f'{self.fm.create_annotation_folder()}\\{annot}'
         self.iters = get_iters(path_annot)
-        tags = ['no'] + list(self.iters.keys()) 
+        tags = ['no'] + list(self.iters.keys())
         self.cb_tag.clear()
         self.cb_tag.addItems(tags)
 
     def btn_next_click(self):
+        '''
+        Нажали на кнопку следующего изображения
+        '''
         tag = self.cb_tag.currentText()
         if tag == 'no' or tag == '':
             return
@@ -127,6 +149,9 @@ class MainWindow(QMainWindow):
         self.image_view.setPixmap(img)
 
     def btn_prev_click(self):
+        '''
+        Нажали на кнопку предыдущего изображения
+        '''
         tag = self.cb_tag.currentText()
         if tag == 'no' or tag == '':
             return
@@ -143,6 +168,9 @@ class MainWindow(QMainWindow):
         self.image_view.setPixmap(img)
 
     def on_combobox_changed(self, value):
+        '''
+        Изменился выбор итератора изображения
+        '''
         if value == 'no'  or value == '':
             img = QPixmap('app/sources/logo.jpg')
             self.image_view.setPixmap(img)
@@ -158,6 +186,9 @@ class MainWindow(QMainWindow):
         self.image_view.setPixmap(img)
 
     def btn_stat_click(self):
+        '''
+        Нажали на кнопку получения статистики о датасете
+        '''
         annot = self.cb_annot.currentText()
         if annot == 'no':
             return
@@ -170,6 +201,9 @@ class MainWindow(QMainWindow):
         dialog.exec_()
 
     def btn_count_click(self):
+        '''
+        Нажали на кнопку получение информации о количестве пикселей в датасете
+        '''
         annot = self.cb_annot.currentText()
         if annot == 'no':
             return
@@ -181,6 +215,9 @@ class MainWindow(QMainWindow):
         dialog.exec_()
 
     def btn_gist_click(self):
+        '''
+        Нажали на кнопку построения гистаграмм
+        '''
         annot = self.cb_annot.currentText()
         if annot == 'no':
             return

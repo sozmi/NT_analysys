@@ -1,8 +1,9 @@
 ﻿import os
 import json
 import datetime
-import requests
 import logging as log
+import requests
+
 import cv2
 import pandas as pd
 
@@ -228,7 +229,8 @@ class DataManager:
 
     def open_or_delete(self, path):
         '''
-        Проверяет возможность открытия файла как изображения, в случае невозможности открытия удаляет файл
+        Проверяет возможность открытия файла как изображения, 
+        в случае невозможности открытия удаляет файл
         @path - путь к файлу
         @return - если файл не валиден, иначе изображение
         '''
@@ -285,6 +287,11 @@ class DataManager:
         return self.delete_if_exist(image, query, path)
 
     def create_dataset_from_files(self, queries):
+        '''
+        Создание датасета из файлов
+        @queries - запросы
+        @return - сформированный DataFrame
+        '''
         cols = ['absolute_path', 'relate_path', 'tag']
         data_matrix = []
         for query in queries:
@@ -299,9 +306,15 @@ class DataManager:
         return pd.DataFrame(data=data_matrix, columns=cols)
 
     def save_new_dataset(self, queries, index_custom=False):
+        '''
+        Формирование и сохранение датасета
+        @queries - запросы
+        @index_custom - нужны ли индексы в файле
+        '''
         file_name = ''
         for query in queries:
             file_name +=f'[{query}]'
+
         path = self.fman.create_annotation_folder() +f'\\{file_name}.csv'
         dataset = self.create_dataset_from_files(queries)
         dataset.to_csv(path, index=index_custom)

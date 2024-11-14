@@ -30,7 +30,7 @@ class Iterator():
 
     def prev(self):
         '''
-        Переходим к следующему элементу
+        Переходим к предыдущему элементу
         @return В случае достижения первого элемента None, иначе сам элемент
         '''
         if self.counter < 0:
@@ -61,6 +61,9 @@ class Iterator():
         return self.data[self.counter]
 
     def get(self):
+        '''
+        Получение текущего значения итератора
+        '''
         if len(self.data) <= self.counter or self.counter<0:
             return None
         return self.data[self.counter]

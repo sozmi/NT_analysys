@@ -22,7 +22,7 @@ class FileManager:
 
         self.path_copy = config.paths["copy_to"]
         create_folder(self.path_copy)
-    
+
     def create_annotation_folder(self):
         '''
         Создает папку "\\annotation"
@@ -37,7 +37,7 @@ class FileManager:
         @return - путь к файлу с url
         '''
         return self.path_sys + f'\\{name}.urls'
-    
+
     def get_path_ann(self, name):
         '''
         Получает путь к файлу, хранящему аннотацию датасета

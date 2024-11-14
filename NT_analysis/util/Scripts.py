@@ -3,8 +3,9 @@ import os.path
 from time import sleep
 from shutil import copy
 from collections import defaultdict
-from util.iterators import Iterator
 import pandas as pd
+from util.iterators import Iterator
+
 
 def create_folder(path):
     '''
@@ -26,15 +27,27 @@ def awaits(sec):
     sleep(1)
 
 def get_row(path, tag):
+    '''
+    Получение строки содержащей абсолютный
+    и относительный пути, а также тэг
+    @path - относительный путь
+    @tag - метка класса
+    @return - сформированная строка
+    '''
     relative_path = path
     absolute_path = os.path.abspath(relative_path)
     return [absolute_path, relative_path, tag]
 
 def get_images(path):
+    '''
+    Получение итератора по относительным путям в аннотации
+    @path - путь к аннотации
+    @return - итератор по строкам
+    '''
     df = pd.read_csv(path, usecols=['relate_path', 'tag'])
     return df.iterrows()
-    
-def copy_dataset_to_rand(to_folder, ann_path, ann_directory): 
+
+def copy_dataset_to_rand(to_folder, ann_path, ann_directory):
     '''
     Копирует файлы содержащиеся в аннотациях исходных папок 
     в формате 0.jpg
@@ -88,17 +101,25 @@ def copy_dataset_to_tag(to_folder, ann_path, ann_directory):
     return full_name
 
 def get_iters_from_annotations(path_annot):
+    '''
+    Получение итераторов по аннотации
+    @path_annot - путь до аннотации
+    @return - словарь итераторов
+    '''
     iters = defaultdict(list)
     df = pd.read_csv(path_annot)
     for _, row in df.iterrows():
         iters[row['tag']].append(row['absolute_path'])
-        
+
     res = {}
     for key, value in iters.items():
         res[key] = Iterator(value)
     return res
 
 def get_keys_from_dict(d):
+    '''
+    Получение ключей словаря
+    @d - словарь
+    @return - список ключей
+    '''
     return list(d.keys())
-
-

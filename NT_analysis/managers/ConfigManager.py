@@ -43,4 +43,4 @@ class ConfigManager:
             paths = config.find('paths')
             self.paths = {}
             for path in paths.findAll('path'):
-                self.paths[path['name']] = path.text 
+                self.paths[path['name']] = path.text

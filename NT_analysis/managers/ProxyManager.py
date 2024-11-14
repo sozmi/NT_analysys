@@ -1,8 +1,7 @@
-import requests
 import logging as log
+import requests
 from bs4 import BeautifulSoup
 from util.scripts import awaits
-
 
 
 class ProxyManager:
