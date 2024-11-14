@@ -98,5 +98,7 @@ def get_iters_from_annotations(path_annot):
         res[key] = Iterator(value)
     return res
 
+def get_keys_from_dict(d):
+    return list(d.keys())
 
 
