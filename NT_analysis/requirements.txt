@@ -10,4 +10,3 @@ pandas==2.2.3
 
 #libraries for visual studio
 pylint==3.3.1
-pytest==8.3.3
