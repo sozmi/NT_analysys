@@ -212,11 +212,17 @@ class DataManager:
         fn = 'file_name'
         # Создаём список файлов в папке
         # Перебираем каждый файл и увеличиваем порядковый номер
+        list_to_del = []
         for index, row in df.iterrows():
             temp_name = f'temp_{index}.jpg'
             temp_path = f'{path}\\{temp_name}'
+            if not os.path.exists(f'{path}\\{row[fn]}'):
+                list_to_del.append(index)
+                continue
             os.rename(f'{path}\\{row[fn]}', temp_path)
             row[fn] = temp_name
+        df.drop(list_to_del, inplace=True)
+        df = df.reset_index(drop=True)
 
         for index, row in df.iterrows():
             name = str(index).zfill(digit_len)
@@ -284,6 +290,8 @@ class DataManager:
         if image is None:
             return False
         image = self.resize_image(image, path)
+        if image is None:
+            return False
         return self.delete_if_exist(image, query, path)
 
     def create_dataset_from_files(self, queries):

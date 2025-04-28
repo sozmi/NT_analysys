@@ -53,5 +53,11 @@ def main():
 
     show_app(fman)
 
+# import cv2
+# size = (int(512), int(512))
+# image = cv2.imread('981.jpg')
+# image = cv2.resize(image, size)
+# cv2.imwrite('981.jpg', image)
+
 if __name__ == '__main__':
-    main()
+    main() 
